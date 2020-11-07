@@ -1,7 +1,6 @@
 package localization.view;
 
 import jason.environment.grid.GridWorldView;
-import jason.environment.grid.Location;
 import localization.models.LocalizationMapModel;
 
 import java.awt.*;

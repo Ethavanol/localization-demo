@@ -1,6 +1,5 @@
 package internal;
 
-import jason.JasonException;
 import jason.NoValueException;
 import jason.asSemantics.DefaultInternalAction;
 import jason.asSemantics.TransitionSystem;

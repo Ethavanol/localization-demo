@@ -1,7 +1,6 @@
 package localization;
 
 import epistemic.agent.EpistemicAgent;
-import jason.asSemantics.Agent;
 
 public class EpistemicLocalizationAg extends EpistemicAgent {
 

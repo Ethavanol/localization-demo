@@ -1,13 +1,11 @@
 package internal;
 
-import jason.JasonException;
 import jason.NoValueException;
 import jason.asSemantics.DefaultInternalAction;
 import jason.asSemantics.TransitionSystem;
 import jason.asSemantics.Unifier;
 import jason.asSyntax.*;
 import jason.environment.grid.Location;
-import localization.models.LocalizationMapModel;
 
 import java.util.HashSet;
 import java.util.Set;

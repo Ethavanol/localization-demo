@@ -1,6 +1,5 @@
 import jason.JasonException;
 import jason.infra.centralised.RunCentralisedMAS;
-import localization.models.LocalizationMapModel;
 
 import java.io.FileNotFoundException;
 
