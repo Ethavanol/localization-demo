@@ -140,6 +140,42 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return goalDirections;
     }
 
+    private Location findClosestGoal(Location curLocation) {
+        // Return this position if it's a goal
+        if(hasObject(GOAL, curLocation))
+            return curLocation;
+
+        Queue<Location> bfsQ = new LinkedList<>();
+        Set<Location> visited = new HashSet<>();
+
+        bfsQ.add(curLocation);
+        int pathLength = 0;
+
+        while (!bfsQ.isEmpty()) {
+            int curNodes = bfsQ.size();
+            for (int i = 0; i < curNodes; i++) {
+
+                Location next = bfsQ.poll();
+
+                if (visited.contains(next))
+                    continue;
+
+                if (hasObject(GOAL, next))
+                    return next;
+
+                visited.add(next);
+
+                for (var adj : getAdjacentLocations(next)) {
+                    if (!visited.contains(adj))
+                        bfsQ.add(adj);
+                }
+            }
+            pathLength++;
+        }
+
+        return null;
+    }
+
     private int findPathToClosestGoal(Location curLocation) {
         Queue<Location> bfsQ = new LinkedList<>();
         Set<Location> visited = new HashSet<>();
@@ -246,6 +282,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             bels.add(getLocationPercepts(location));
             bels.add(getAdjacentBelief(location));
             bels.add(getDirectionsToGoal(location));
+            bels.add(getGoalRel(location));
         }
 
         return bels;
@@ -255,6 +292,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         Map<Location, Literal> locationPercepts = new LinkedHashMap<>();
         Map<Location, Literal> adjBeliefs = new LinkedHashMap<>();
         Map<Location, Literal> dirBeliefs = new LinkedHashMap<>();
+        Map<Location, Literal> goalRelBeliefs = new LinkedHashMap<>();
 
         for (Location location : getAllLocations()) {
             if (!inGrid(location) || !isFreeOfObstacle(location))
@@ -265,13 +303,23 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
             Literal dirListTerm = getDirectionsToGoal(location);
             dirBeliefs.put(location, dirListTerm);
+
+            Literal goalRelTerm = getGoalRel(location);
+            goalRelBeliefs.put(location, goalRelTerm);
         }
 
         return "/** These are the beliefs generated for the map that are added automatically to the BB **/\n" +
                 "/** This file is not loaded by the agent. It is just the output for debugging purposes and will be overwritten. **/\n" +
                 getBeliefASLString("Map Location Mappings", locationPercepts.values()) +
                 getBeliefASLString("Adjacent Location Mappings", adjBeliefs.values()) +
+                getBeliefASLString("Location Goal Rel. Mappings", goalRelBeliefs.values()) +
                 getBeliefASLString("Location Direction Mappings", dirBeliefs.values());
+    }
+
+    private Literal getGoalRel(Location location) {
+        Location nearest = (getNearestGoal(location));
+        Location delta = new Location(nearest.x - location.x, nearest.y - location.y);
+        return ASSyntax.createLiteral("locGoalRel", getLocationLiteral(location), getLocationLiteral(delta));
     }
 
     private String getBeliefASLString(String heading, Collection<Literal> mapping) {
@@ -303,10 +351,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
         // Add Percept beliefs
         var listTerm = new ListTermImpl();
-        listTerm.add(percepts.get(3));
-        listTerm.add(percepts.get(2));
-        listTerm.add(percepts.get(0));
-        listTerm.add(percepts.get(1));
+        listTerm.addAll(percepts);
         return ASSyntax.createLiteral("locPercept", locationLit, listTerm);
     }
 

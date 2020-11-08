@@ -14,6 +14,7 @@ import java.util.List;
 public class update_possible extends DefaultInternalAction {
     public Object execute(TransitionSystem ts, Unifier un, Term[] args) throws Exception {
 
+        ts.getAg().getBB().add(new Rule(ASSyntax.createLiteral("test"), Literal.LTrue));
 
         var res = ts.getAg().getBB().getCandidateBeliefs(ASSyntax.createLiteral("modelObject", ASSyntax.createVar("Model")), null);
 

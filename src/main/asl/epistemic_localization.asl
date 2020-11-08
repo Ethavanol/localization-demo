@@ -7,6 +7,7 @@ location(X, Y)[possibly]
 percept(Direction, Object)[necessary] :- location(X, Y) & locPercept(location(X, Y), Perceptions) & .member(percept(Direction, Object), Perceptions).
 adjacent(MoveDir, Prev)[necessary] :- location(X, Y) & locAdjacent(location(X, Y), Adj) & .member(adjacent(MoveDir, Prev), Adj).
 direction(Dir)[necessary] :- location(X, Y) & locDirToGoal(location(X,Y), Dirs) & .member(Dir, Dirs).
+goalRelative(Gx, Gy)[necessary] :- location(X, Y) & locGoalRel(location(X,Y), location(Gx, Gy)).
 
 
 //percept(up, Object)[necessary] :- location(X, Y) & visual(location(X, Y), up, Object).
