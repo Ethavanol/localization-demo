@@ -3,9 +3,11 @@ package localization.models;
 import jason.asSyntax.Atom;
 import jason.asSyntax.Literal;
 import jason.environment.grid.Location;
+import localization.perception.Terrain;
 
 import java.util.EventObject;
 import java.util.List;
+import java.util.Map;
 
 public class MapEvent extends EventObject {
 
@@ -24,7 +26,10 @@ public class MapEvent extends EventObject {
         return newLocation;
     }
 
-    public Atom getMoveDirection() {
+    public Location getMoveDirection() {
+        return source.getLastDirection();
+    }
+    public Atom getMoveDirectionAtom() {
         return moveDirection;
     }
 
@@ -32,6 +37,12 @@ public class MapEvent extends EventObject {
     {
         return source.getPercepts(newLocation);
     }
+
+    public Map<Location, Terrain> getRawPerceptions()
+    {
+        return source.getPerceptData();
+    }
+
 
     @Override
     public LocalizationMapModel getSource() {

@@ -1,8 +1,13 @@
 package localization;
 
+import epistemic.agent.EpistemicAgent;
+import jason.asSemantics.TransitionSystem;
 import jason.asSyntax.*;
 import jason.environment.Environment;
+import jason.infra.centralised.RunCentralisedMAS;
 import localization.models.MapEvent;
+import localization.perception.AgentPerspectiveMap;
+import localization.perception.Perception;
 import localization.view.LocalizationMapView;
 import localization.models.LocalizationMapModel;
 
@@ -13,6 +18,7 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
 
     // Hack to access from agent....
     public static LocalizationMapEnvironment instance;
+    private final AgentPerspectiveMap observedMap;
 
     private final LocalizationMapView localizationMapView;
     private final LocalizationMapModel localizationMapModel;
@@ -23,10 +29,10 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
         this.mapEventQueue = new LinkedList<>();
         localizationMapView = new LocalizationMapView();
         localizationMapModel = localizationMapView.getModel();
+        this.observedMap = new AgentPerspectiveMap();
 
         // Generate the map information beliefs based on the loaded map
         localizationMapModel.generateASL();
-
 
 
         localizationMapModel.addMapListener(this);
@@ -61,17 +67,23 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
             return null;
 
 
-
-
         // Get next event to process
         MapEvent nextEvent = mapEventQueue.poll();
 
+        EpistemicAgent agent = (EpistemicAgent) RunCentralisedMAS.getRunner().getAgs().get(agName).getTS().getAg();
+        boolean hasChanged = observedMap.agentMoved(nextEvent.getMoveDirection(), new Perception(nextEvent.getRawPerceptions()));
+
+        if(hasChanged) {
+            for (var lit : observedMap.toMapBeliefData())
+                agent.getBB().add(lit);
+            agent.rebuildDistribution();
+        }
         curPercepts.add(ASSyntax.createAtom("moved"));
 //        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(2), ASSyntax.createNumber(1)));
 //        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(1), ASSyntax.createNumber(1)));
 //        curPercepts.add(ASSyntax.createLiteral(Literal.LNeg, "location", ASSyntax.createNumber(3), ASSyntax.createNumber(3)));
         curPercepts.addAll(nextEvent.getPerceptions());
-        curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirection()));
+        curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
         return curPercepts;
     }
@@ -80,6 +92,9 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
         List<Literal> persistPercepts = new ArrayList<>();
 
         persistPercepts.add(ASSyntax.createLiteral("modelObject", new ObjectTermImpl(localizationMapModel)));
+
+        // Add dynamic map knowledge
+//        persistPercepts.addAll(getModel().dumpMapBeliefsToBB());
 
         if (localizationMapView.getSettingsPanel().shouldAutoMove())
             persistPercepts.add(ASSyntax.createLiteral("autoMove"));

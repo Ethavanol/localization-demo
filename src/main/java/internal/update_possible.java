@@ -1,5 +1,6 @@
 package internal;
 
+import epistemic.agent.EpistemicAgent;
 import jason.NoValueException;
 import jason.asSemantics.DefaultInternalAction;
 import jason.asSemantics.TransitionSystem;
@@ -14,7 +15,8 @@ import java.util.List;
 public class update_possible extends DefaultInternalAction {
     public Object execute(TransitionSystem ts, Unifier un, Term[] args) throws Exception {
 
-        ts.getAg().getBB().add(new Rule(ASSyntax.createLiteral("test"), Literal.LTrue));
+//        ((EpistemicAgent) ts.getAg()).rebuildDistribution();
+
 
         var res = ts.getAg().getBB().getCandidateBeliefs(ASSyntax.createLiteral("modelObject", ASSyntax.createVar("Model")), null);
 
