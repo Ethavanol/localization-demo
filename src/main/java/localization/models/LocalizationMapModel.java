@@ -14,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class LocalizationMapModel extends GridWorldModel implements KeyListener {
@@ -33,6 +34,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     private Location lastPosition;
     private boolean inputEnabled = true;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     public LocalizationMapModel(int w, int h, int nbAgs) {
         super(w, h, nbAgs);
@@ -63,11 +65,11 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             FileWriter bos = new FileWriter(newFile);
             bos.write(dumpMapBeliefs());
             bos.close();
-            System.out.println("Wrote auto-generated map beliefs to " + newFile.getCanonicalPath());
+            logger.info("Wrote auto-generated map beliefs to " + newFile.getCanonicalPath());
 
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Failed to output generated map belief file.. continuing anyways.");
+            logger.warning("Failed to output generated map belief file.. continuing anyways.");
         }
     }
 
@@ -241,7 +243,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     public synchronized void keyTyped(KeyEvent e) {
         if(!inputEnabled)
         {
-            System.out.println("Waiting for agent to process previous input...");
+            logger.info("Waiting for agent to process previous input...");
             return;
         }
 
@@ -399,7 +401,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     {
         Location delta = new Location(dst.x - src.x, dst.y - src.y);
         if ((Math.abs(delta.x) != 1 && Math.abs(delta.y) != 1) || (delta.x == delta.y)) {
-            System.out.println("Invalid Direction? " + delta);
+            logger.warning("Invalid Direction? " + delta);
             throw new NullPointerException();
         }
 
@@ -466,7 +468,6 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             throw new RuntimeException("Failed to load map!", e);
         }
         LocalizationMap map = gson.fromJson(reader, LocalizationMap.class);
-        System.out.println(map);
 
         return new LocalizationMapModel(map);
     }
