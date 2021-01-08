@@ -1,15 +1,17 @@
 package localization;
 
 import epistemic.agent.EpistemicAgent;
-import jason.asSemantics.TransitionSystem;
-import jason.asSyntax.*;
+import jason.asSyntax.ASSyntax;
+import jason.asSyntax.Literal;
+import jason.asSyntax.ObjectTermImpl;
+import jason.asSyntax.Structure;
 import jason.environment.Environment;
 import jason.infra.centralised.RunCentralisedMAS;
+import localization.models.LocalizationMapModel;
 import localization.models.MapEvent;
 import localization.perception.AgentPerspectiveMap;
 import localization.perception.Perception;
 import localization.view.LocalizationMapView;
-import localization.models.LocalizationMapModel;
 
 import java.util.*;
 
@@ -85,13 +87,23 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
         curPercepts.addAll(nextEvent.getPerceptions());
         curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
+        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Bob"), ASSyntax.createString("A8")));
+        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Charlie"), ASSyntax.createString("A8")));
+        curPercepts.add(ASSyntax.createLiteral("peekedCard", ASSyntax.createString("A")));
         return curPercepts;
+    }
+
+    @Override
+    public boolean executeAction(String agName, Structure act) {
+        return true;
     }
 
     private List<Literal> getPersistentPercepts() {
         List<Literal> persistPercepts = new ArrayList<>();
 
         persistPercepts.add(ASSyntax.createLiteral("modelObject", new ObjectTermImpl(localizationMapModel)));
+
+
 
         // Add dynamic map knowledge
 //        persistPercepts.addAll(getModel().dumpMapBeliefsToBB());

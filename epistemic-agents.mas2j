@@ -4,12 +4,16 @@ MAS epistemic_agents {
     infrastructure: Centralised
 	
 	//environment: eis.EISAdapter
-	environment: localization.LocalizationMapEnvironment
+	//environment: localization.LocalizationMapEnvironment
+	environment: localization.AcesEnvironment
 
 	//executionControl: jason.control.ExecutionControlGUI
 
 	agents:
-	   epistemic_localization agentClass localization.EpistemicLocalizationAg agentArchClass localization.LocalizationAgArch #1;
+
+	   epistemic_aces_new agentClass localization.EpistemicAcesAgent #1;
+	   //epistemic_aces #1;
+	   //epistemic_localization agentClass localization.EpistemicLocalizationAg agentArchClass localization.LocalizationAgArch #1;
 
 	    // Localization (Vanilla Jason Approach)
 	    //localization agentClass localization.LocalizationAg agentArchClass localization.LocalizationAgArch #1;
