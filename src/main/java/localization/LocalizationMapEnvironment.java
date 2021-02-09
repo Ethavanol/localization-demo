@@ -1,16 +1,13 @@
 package localization;
 
-import epistemic.agent.EpistemicAgent;
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Literal;
 import jason.asSyntax.ObjectTermImpl;
 import jason.asSyntax.Structure;
 import jason.environment.Environment;
-import jason.infra.centralised.RunCentralisedMAS;
 import localization.models.LocalizationMapModel;
 import localization.models.MapEvent;
 import localization.perception.AgentPerspectiveMap;
-import localization.perception.Perception;
 import localization.view.LocalizationMapView;
 
 import java.util.*;
@@ -18,6 +15,8 @@ import java.util.*;
 public class LocalizationMapEnvironment extends Environment implements MapEventListener {
 
 
+    private static final String RED_ITEM = "red";
+    private static final String BLUE_ITEM = "blue";
     // Hack to access from agent....
     public static LocalizationMapEnvironment instance;
     private final AgentPerspectiveMap observedMap;
@@ -25,6 +24,8 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
     private final LocalizationMapView localizationMapView;
     private final LocalizationMapModel localizationMapModel;
     private final Queue<MapEvent> mapEventQueue;
+    
+    private final Set<String> backpack;
 
     public LocalizationMapEnvironment() {
         instance = this;
@@ -39,6 +40,7 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
 
         localizationMapModel.addMapListener(this);
         localizationMapView.setVisible(true);
+        backpack = new HashSet<>();
     }
 
     @Override
@@ -72,29 +74,49 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
         // Get next event to process
         MapEvent nextEvent = mapEventQueue.poll();
 
-        EpistemicAgent agent = (EpistemicAgent) RunCentralisedMAS.getRunner().getAgs().get(agName).getTS().getAg();
-        boolean hasChanged = observedMap.agentMoved(nextEvent.getMoveDirection(), new Perception(nextEvent.getRawPerceptions()));
-
-        if(hasChanged) {
-            for (var lit : observedMap.toMapBeliefData())
-                agent.getBB().add(lit);
-            agent.rebuildDistribution();
-        }
         curPercepts.add(ASSyntax.createAtom("moved"));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(2), ASSyntax.createNumber(1)));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(1), ASSyntax.createNumber(1)));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LNeg, "location", ASSyntax.createNumber(3), ASSyntax.createNumber(3)));
         curPercepts.addAll(nextEvent.getPerceptions());
         curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
-        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Bob"), ASSyntax.createString("A8")));
-        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Charlie"), ASSyntax.createString("A8")));
-        curPercepts.add(ASSyntax.createLiteral("peekedCard", ASSyntax.createString("A")));
         return curPercepts;
     }
 
     @Override
     public boolean executeAction(String agName, Structure act) {
+        getLogger().info("Action: " + act.toString());
+
+        if(act.getFunctor().equals("move"))
+        {
+            String dir = act.getTerm(0).toString();
+            if(dir.equals("right")) localizationMapModel.moveRight();
+            if(dir.equals("left")) localizationMapModel.moveLeft();
+            if(dir.equals("up")) localizationMapModel.moveUp();
+            if(dir.equals("down")) localizationMapModel.moveDown();
+        }
+
+        if(act.getFunctor().equals("pickUp")) {
+            var loc = localizationMapModel.getAgPos(0);
+            if (localizationMapModel.hasObject(LocalizationMapModel.RED_DISP, loc)) {
+                backpack.add(RED_ITEM);
+                localizationMapModel.remove(LocalizationMapModel.RED_DISP, loc);
+            }
+
+            if (localizationMapModel.hasObject(LocalizationMapModel.BLUE_DISP, loc)) {
+                backpack.add(BLUE_ITEM);
+                localizationMapModel.remove(LocalizationMapModel.BLUE_DISP,loc);
+            }
+        }
+
+        if(act.getFunctor().equals("submit")) {
+            if(backpack.contains(RED_ITEM))
+                getLogger().info("Submit success! Congratulations!");
+            else
+            {
+                getLogger().warning("Submit without item! Failure.");
+                return false;
+            }
+        }
+
         return true;
     }
 

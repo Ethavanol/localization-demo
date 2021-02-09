@@ -12,7 +12,7 @@ public class EpistemicLocalizationAg extends EpistemicAgent {
 
         // Add map data
         // Changed this to on-the-fly (percepts) so that we can shift towards MAPC
-//        for (var bel : LocalizationMapEnvironment.instance.getModel().dumpMapBeliefsToBB())
-//            this.addInitialBel(bel);
+        for (var bel : LocalizationMapEnvironment.instance.getModel().dumpMapBeliefsToBB())
+            this.addInitialBel(bel);
     }
 }

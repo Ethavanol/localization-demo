@@ -39,10 +39,25 @@ public class LocalizationMapView extends GridWorldView {
             drawGoal(g, x, y);
         }
 
+        if ((object & LocalizationMapModel.RED_DISP) != 0) {
+            drawDispenser(g, x, y, Color.RED);
+        }
+
+        if ((object & LocalizationMapModel.BLUE_DISP) != 0) {
+            drawDispenser(g, x, y, Color.BLUE);
+        }
+
         if ((object & LocalizationMapModel.POSSIBLE) != 0) {
 //            drawEmpty(g,x,y);
             drawPossible(g, x, y);
         }
+    }
+
+    private void drawDispenser(Graphics g, int x, int y, Color color) {
+        g.setColor(color);
+        var size = 20;
+        g.fill3DRect(x * cellSizeW + size, y * cellSizeH + size, cellSizeW - (2*size), cellSizeH - (2*size), true);
+
     }
 
     private void drawGoal(Graphics g, int x, int y) {

@@ -19,8 +19,10 @@ import java.util.stream.Collectors;
 
 public class LocalizationMapModel extends GridWorldModel implements KeyListener {
 
-    public static final int POSSIBLE = 16;
-    public static final int GOAL = 8;
+    public static final int POSSIBLE = (int) Math.pow(2, 4);
+    public static final int GOAL = (int) Math.pow(2, 3);
+    public static final int RED_DISP = (int) Math.pow(2, 5);
+    public static final int BLUE_DISP = (int) Math.pow(2, 6);
     private static final Terrain OBSTACLE = Terrain.OBSTACLE;
     private static final Terrain NONE = Terrain.NONE;
     private static final int AGENT_IDX = 0;
@@ -112,10 +114,10 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return minGoal;
     }
 
-    private List<Literal> getNearestGoalDirections(Location curLocation) {
+    private List<Literal> getNearestObjectDirections(Location curLocation, int obj) {
         List<Literal> goalDirections = new ArrayList<>();
 
-        if(hasObject(GOAL, curLocation))
+        if(hasObject(obj, curLocation))
         {
             goalDirections.add(NONE.getTerrainAtom());
             return goalDirections;
@@ -126,12 +128,15 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         Location north = new Location(curLocation.x, curLocation.y - 1);
         Location south = new Location(curLocation.x, curLocation.y + 1);
 
-        int westPath = findPathToClosestGoal(west);
-        int eastPath = findPathToClosestGoal(east);
-        int northPath = findPathToClosestGoal(north);
-        int southPath = findPathToClosestGoal(south);
+        int westPath = findPathToClosestObject(west, obj);
+        int eastPath = findPathToClosestObject(east, obj);
+        int northPath = findPathToClosestObject(north, obj);
+        int southPath = findPathToClosestObject(south, obj);
 
         int minPath = Math.min(Math.min(Math.min(westPath, northPath), eastPath), southPath);
+
+        if(minPath == Integer.MAX_VALUE)
+            logger.info("Could not find object (" + obj + "). Returning all directions!");
 
         if(westPath == minPath)
             goalDirections.add(ASSyntax.createAtom("left"));
@@ -181,7 +186,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return null;
     }
 
-    private int findPathToClosestGoal(Location curLocation) {
+    private int findPathToClosestObject(Location curLocation, int obj) {
         Queue<Location> bfsQ = new LinkedList<>();
         Set<Location> visited = new HashSet<>();
 
@@ -197,7 +202,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
                 if (visited.contains(next))
                     continue;
 
-                if (hasObject(GOAL, next))
+                if (hasObject(obj, next))
                     return pathLength;
 
                     visited.add(next);
@@ -234,8 +239,9 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     public synchronized void setPossible(List<Location> newPossible) {
         this.clearPossible();
-        List<Location> transformed = newPossible.stream().map(location ->  new Location(initialLocation.x + location.x, initialLocation.y + location.y)).collect(Collectors.toList());
-        this.possibleLocations.addAll(transformed);
+        // Transform for true localization where we don't have absolute positions
+//        List<Location> transformed = newPossible.stream().map(location ->  new Location(initialLocation.x + location.x, initialLocation.y + location.y)).collect(Collectors.toList());
+        this.possibleLocations.addAll(newPossible);
         this.addPossible();
     }
 
@@ -309,6 +315,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             bels.add(getLocationPercepts(location));
             bels.add(getAdjacentBelief(location));
             bels.add(getDirectionsToGoal(location));
+            bels.addAll(getDirectionsToDispensers(location));
             bels.add(getGoalRel(location));
         }
 
@@ -365,8 +372,21 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     @NotNull
     private Literal getDirectionsToGoal(Location location) {
         var dirListTerm = new ListTermImpl();
-        dirListTerm.addAll(getNearestGoalDirections(location));
+        dirListTerm.addAll(getNearestObjectDirections(location, GOAL));
         return ASSyntax.createLiteral("locDirToGoal", getLocationLiteral(location), dirListTerm);
+    }
+    @NotNull
+    private List<Literal> getDirectionsToDispensers(Location location) {
+        var redDispenserDirs = new ListTermImpl();
+        redDispenserDirs.addAll(getNearestObjectDirections(location, RED_DISP));
+
+        var blueDispenserDirs = new ListTermImpl();
+        blueDispenserDirs.addAll(getNearestObjectDirections(location, BLUE_DISP));
+
+        List<Literal> dispenserDirs = new ArrayList<>();
+        dispenserDirs.add(ASSyntax.createLiteral("locDirToDispenser", getLocationLiteral(location), ASSyntax.createAtom("red"), redDispenserDirs));
+        dispenserDirs.add(ASSyntax.createLiteral("locDirToDispenser", getLocationLiteral(location), ASSyntax.createAtom("blue"), blueDispenserDirs));
+        return dispenserDirs;
     }
 
     private Literal getLocationPercepts(Location location) {
