@@ -1,0 +1,15 @@
+
+MAS epistemic_agents {
+
+    infrastructure: Centralised
+	environment: aces.AcesEnvironment
+
+	//executionControl: jason.control.ExecutionControlGUI
+
+	agents:
+	   epistemic_aces agentClass aces.EpistemicAcesAgent #1;
+
+	aslSourcePath: "src/main/asl";
+	
+    
+}

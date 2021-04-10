@@ -4,6 +4,7 @@ import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Atom;
 
 public enum Terrain {
+    RED_DISPENSER("obstacle"),
     OBSTACLE("obstacle"),
     NONE("none");
 

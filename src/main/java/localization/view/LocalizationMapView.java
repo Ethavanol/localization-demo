@@ -20,6 +20,7 @@ public class LocalizationMapView extends GridWorldView {
         this.model = model;
         this.getCanvas().addKeyListener(model);
         this.getModel().addMapListener(settingsPanel);
+
     }
 
     @Override
@@ -32,6 +33,15 @@ public class LocalizationMapView extends GridWorldView {
         super.getContentPane().add(BorderLayout.SOUTH, settingsPanel);
     }
 
+    @Override
+    public void drawAgent(Graphics g, int x, int y, Color c, int id) {
+        if(id == 0)
+            super.drawAgent(g, x, y, c, id);
+        if(id == 1)
+            super.drawAgent(g, x, y, Color.red, id);
+        if(id == 2)
+            super.drawAgent(g, x, y, Color.green, id);
+    }
 
     @Override
     public void draw(Graphics g, int x, int y, int object) {
@@ -48,9 +58,12 @@ public class LocalizationMapView extends GridWorldView {
         }
 
         if ((object & LocalizationMapModel.POSSIBLE) != 0) {
-//            drawEmpty(g,x,y);
+            drawEmpty(g,x,y);
             drawPossible(g, x, y);
         }
+
+
+
     }
 
     private void drawDispenser(Graphics g, int x, int y, Color color) {
@@ -81,8 +94,8 @@ public class LocalizationMapView extends GridWorldView {
         }
     }
 
-    public LocalizationMapView() {
-        this(LocalizationMapModel.loadFromFile());
+    public LocalizationMapView(MapType mapType) {
+        this(LocalizationMapModel.loadFromFile(mapType));
     }
 
     @Override
@@ -95,6 +108,21 @@ public class LocalizationMapView extends GridWorldView {
         return this.settingsPanel;
     }
 
+
+    public enum MapType
+    {
+        LOCALIZATION("localization_map.json"),
+        IDENTIFICATION("identification_map.json");
+
+        private String fileName;
+        MapType(String s) {
+            this.fileName = s;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+    }
 
 }
 

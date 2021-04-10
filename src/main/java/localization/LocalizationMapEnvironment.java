@@ -7,52 +7,34 @@ import jason.asSyntax.Structure;
 import jason.environment.Environment;
 import localization.models.LocalizationMapModel;
 import localization.models.MapEvent;
-import localization.perception.AgentPerspectiveMap;
 import localization.view.LocalizationMapView;
 
 import java.util.*;
 
-public class LocalizationMapEnvironment extends Environment implements MapEventListener {
+public abstract class LocalizationMapEnvironment extends Environment implements MapEventListener {
 
+    private Queue<MapEvent> mapEventQueue;
 
-    private static final String RED_ITEM = "red";
-    private static final String BLUE_ITEM = "blue";
-    // Hack to access from agent....
-    public static LocalizationMapEnvironment instance;
-    private final AgentPerspectiveMap observedMap;
-
-    private final LocalizationMapView localizationMapView;
-    private final LocalizationMapModel localizationMapModel;
-    private final Queue<MapEvent> mapEventQueue;
-    
-    private final Set<String> backpack;
-
-    public LocalizationMapEnvironment() {
-        instance = this;
-        this.mapEventQueue = new LinkedList<>();
-        localizationMapView = new LocalizationMapView();
-        localizationMapModel = localizationMapView.getModel();
-        this.observedMap = new AgentPerspectiveMap();
-
-        // Generate the map information beliefs based on the loaded map
-        localizationMapModel.generateASL();
-
-
-        localizationMapModel.addMapListener(this);
-        localizationMapView.setVisible(true);
-        backpack = new HashSet<>();
-    }
+    private LocalizationMapView localizationMapView;
+    private LocalizationMapModel localizationMapModel;
 
     @Override
     public void init(String[] args) {
+        this.mapEventQueue = new LinkedList<>();
+        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION);
+        localizationMapModel = localizationMapView.getModel();
+
+        localizationMapModel.addMapListener(this);
+        localizationMapView.setVisible(true);
         super.init(args);
+
     }
 
     @Override
     public synchronized Collection<Literal> getPercepts(String agName) {
         // No change in perceptions if the agent hasn't moved
         // Also, keep current percepts if the agent is not done reasoning
-        super.clearPercepts(agName);
+        clearPercepts(agName);
 
         var curPercepts = super.getPercepts(agName);
 
@@ -75,49 +57,10 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
         MapEvent nextEvent = mapEventQueue.poll();
 
         curPercepts.add(ASSyntax.createAtom("moved"));
-        curPercepts.addAll(nextEvent.getPerceptions());
+//        curPercepts.addAll(nextEvent.getPerceptions());
         curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
         return curPercepts;
-    }
-
-    @Override
-    public boolean executeAction(String agName, Structure act) {
-        getLogger().info("Action: " + act.toString());
-
-        if(act.getFunctor().equals("move"))
-        {
-            String dir = act.getTerm(0).toString();
-            if(dir.equals("right")) localizationMapModel.moveRight();
-            if(dir.equals("left")) localizationMapModel.moveLeft();
-            if(dir.equals("up")) localizationMapModel.moveUp();
-            if(dir.equals("down")) localizationMapModel.moveDown();
-        }
-
-        if(act.getFunctor().equals("pickUp")) {
-            var loc = localizationMapModel.getAgPos(0);
-            if (localizationMapModel.hasObject(LocalizationMapModel.RED_DISP, loc)) {
-                backpack.add(RED_ITEM);
-                localizationMapModel.remove(LocalizationMapModel.RED_DISP, loc);
-            }
-
-            if (localizationMapModel.hasObject(LocalizationMapModel.BLUE_DISP, loc)) {
-                backpack.add(BLUE_ITEM);
-                localizationMapModel.remove(LocalizationMapModel.BLUE_DISP,loc);
-            }
-        }
-
-        if(act.getFunctor().equals("submit")) {
-            if(backpack.contains(RED_ITEM))
-                getLogger().info("Submit success! Congratulations!");
-            else
-            {
-                getLogger().warning("Submit without item! Failure.");
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private List<Literal> getPersistentPercepts() {
@@ -125,17 +68,11 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
 
         persistPercepts.add(ASSyntax.createLiteral("modelObject", new ObjectTermImpl(localizationMapModel)));
 
-
-
-        // Add dynamic map knowledge
-//        persistPercepts.addAll(getModel().dumpMapBeliefsToBB());
-
         if (localizationMapView.getSettingsPanel().shouldAutoMove())
             persistPercepts.add(ASSyntax.createLiteral("autoMove"));
 
         return persistPercepts;
     }
-
 
     @Override
     public synchronized void agentMoved(MapEvent event) {
@@ -152,4 +89,21 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
     public LocalizationMapModel getModel() {
         return localizationMapModel;
     }
+
+    @Override
+    public final boolean executeAction(String agName, Structure act) {
+        if(act.getFunctor().equals("move"))
+        {
+            String dir = act.getTerm(0).toString();
+            if(dir.equals("right")) localizationMapModel.moveRight();
+            if(dir.equals("left")) localizationMapModel.moveLeft();
+            if(dir.equals("up")) localizationMapModel.moveUp();
+            if(dir.equals("down")) localizationMapModel.moveDown();
+            return true;
+        }
+
+        return executeAction(agName, act.getFunctor(), act);
+    }
+
+    public abstract boolean executeAction(String agName, String actionName, Structure action);
 }

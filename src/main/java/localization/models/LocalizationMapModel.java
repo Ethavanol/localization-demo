@@ -27,6 +27,12 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     private static final Terrain NONE = Terrain.NONE;
     private static final int AGENT_IDX = 0;
 
+    // Create unique perceptions (gives largest prop size)
+    private static final boolean UNIQUE_PERCEPTS = false;
+
+    // Max number of obst/none percept combinations
+    private static final boolean MAX_PERCEPTS = true;
+
 
     private List<MapEventListener> mapEventListeners;
     private List<Location> possibleLocations;
@@ -37,6 +43,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     private Location lastPosition;
     private boolean inputEnabled = true;
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private boolean usedNone = false;
 
     public LocalizationMapModel(int w, int h, int nbAgs) {
         super(w, h, nbAgs);
@@ -46,9 +53,17 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     }
 
     public LocalizationMapModel(LocalizationMap map) {
-        this(map.getWidth(), map.getHeight(), 1);
+        this(map.getWidth(), map.getHeight(), 3);
 
         this.setAgPos(AGENT_IDX, map.getAgentStart());
+
+        // Bob
+        this.setAgPos(AGENT_IDX + 1, new Location(2, 1));
+
+        // Charlie
+        this.setAgPos(AGENT_IDX + 2, new Location(1, 3));
+
+
         this.initialLocation = map.getAgentStart();
 
         for (var marker : map.getMarkers()) {
@@ -65,7 +80,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             newFile.createNewFile();
 
             FileWriter bos = new FileWriter(newFile);
-            bos.write(dumpMapBeliefs());
+//            bos.write(dumpMapBeliefs());
             bos.close();
             logger.info("Wrote auto-generated map beliefs to " + newFile.getCanonicalPath());
 
@@ -117,8 +132,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     private List<Literal> getNearestObjectDirections(Location curLocation, int obj) {
         List<Literal> goalDirections = new ArrayList<>();
 
-        if(hasObject(obj, curLocation))
-        {
+        if (hasObject(obj, curLocation)) {
             goalDirections.add(NONE.getTerrainAtom());
             return goalDirections;
         }
@@ -135,16 +149,16 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
         int minPath = Math.min(Math.min(Math.min(westPath, northPath), eastPath), southPath);
 
-        if(minPath == Integer.MAX_VALUE)
+        if (minPath == Integer.MAX_VALUE)
             logger.info("Could not find object (" + obj + "). Returning all directions!");
 
-        if(westPath == minPath)
+        if (westPath == minPath)
             goalDirections.add(ASSyntax.createAtom("left"));
-        if(eastPath == minPath)
+        if (eastPath == minPath)
             goalDirections.add(ASSyntax.createAtom("right"));
-        if(northPath == minPath)
+        if (northPath == minPath)
             goalDirections.add(ASSyntax.createAtom("up"));
-        if(southPath == minPath)
+        if (southPath == minPath)
             goalDirections.add(ASSyntax.createAtom("down"));
 
         return goalDirections;
@@ -152,7 +166,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     private Location findClosestGoal(Location curLocation) {
         // Return this position if it's a goal
-        if(hasObject(GOAL, curLocation))
+        if (hasObject(GOAL, curLocation))
             return curLocation;
 
         Queue<Location> bfsQ = new LinkedList<>();
@@ -205,7 +219,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
                 if (hasObject(obj, next))
                     return pathLength;
 
-                    visited.add(next);
+                visited.add(next);
 
                 for (var adj : getAdjacentLocations(next)) {
                     if (!visited.contains(adj))
@@ -220,8 +234,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
 
     private synchronized void addPossible() {
-        for (var location : possibleLocations)
-        {
+        for (var location : possibleLocations) {
             // For relative agent positions
             this.add(POSSIBLE, location);
         }
@@ -247,10 +260,15 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     @Override
     public synchronized void keyTyped(KeyEvent e) {
-        if(!inputEnabled)
-        {
+        if (!inputEnabled) {
             logger.info("Waiting for agent to process previous input...");
             return;
+        }
+
+        if (e.getKeyChar() == 'v') {
+            // Toggle settings panel
+            boolean curVis = getView().getSettingsPanel().isVisible();
+            getView().getSettingsPanel().setVisible(!curVis);
         }
 
         if (e.getKeyChar() == 'w')
@@ -271,8 +289,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             listener.agentMoved(new MapEvent(this, agentLoc, moveDirection));
     }
 
-    public Map<Location, Terrain> getPerceptData()
-    {
+    public Map<Location, Terrain> getPerceptData() {
         var agentPos = getAgPos(0);
 
         int x = agentPos.x;
@@ -308,6 +325,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     public List<Literal> dumpMapBeliefsToBB() {
         List<Literal> bels = new ArrayList<>();
 
+        countUniqueObjects = 0;
         for (Location location : getAllLocations()) {
             if (!inGrid(location) || !isFreeOfObstacle(location))
                 continue;
@@ -317,9 +335,96 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             bels.add(getDirectionsToGoal(location));
             bels.addAll(getDirectionsToDispensers(location));
             bels.add(getGoalRel(location));
+//            bels.addAll(getShortestPathDirs(location));
         }
 
+        logger.info("number of unique objects: " + countUniqueObjects);
+
         return bels;
+    }
+
+    private List<Literal> getShortestPathDirs(Location source) {
+        List<Literal> shortestPathLits = new ArrayList<>();
+
+        if (!inGrid(source) || !isFreeOfObstacle(source))
+            return shortestPathLits;
+
+        for (Location dest : getAllLocations()) {
+            if (!inGrid(dest) || !isFreeOfObstacle(dest) || dest.equals(source))
+                continue;
+
+            Location west = new Location(source.x - 1, source.y);
+            Location east = new Location(source.x + 1, source.y);
+            Location north = new Location(source.x, source.y - 1);
+            Location south = new Location(source.x, source.y + 1);
+
+            int westPath = findPathTo(west, dest, new HashSet<>());
+            int eastPath = findPathTo(east, dest, new HashSet<>());
+            int northPath = findPathTo(north, dest, new HashSet<>());
+            int southPath = findPathTo(south, dest, new HashSet<>());
+
+            int minPath = Math.min(Math.min(Math.min(westPath, northPath), eastPath), southPath);
+
+            if (minPath == Integer.MAX_VALUE) {
+                logger.info("No path to dest!");
+                continue;
+            }
+
+            if (westPath == minPath)
+                shortestPathLits.add(ASSyntax.createLiteral("shortestPathDir", getLocationLiteral(source), getLocationLiteral(dest), ASSyntax.createAtom("left")));
+            if (eastPath == minPath)
+                shortestPathLits.add(ASSyntax.createLiteral("shortestPathDir", getLocationLiteral(source), getLocationLiteral(dest), ASSyntax.createAtom("right")));
+            if (northPath == minPath)
+                shortestPathLits.add(ASSyntax.createLiteral("shortestPathDir", getLocationLiteral(source), getLocationLiteral(dest), ASSyntax.createAtom("up")));
+            if (southPath == minPath)
+                shortestPathLits.add(ASSyntax.createLiteral("shortestPathDir", getLocationLiteral(source), getLocationLiteral(dest), ASSyntax.createAtom("down")));
+
+
+            // Get shortest path to dest
+            // Get direction 'dir' to next location on shortest path
+            // ADd literal with (location, dest, dir)
+
+
+        }
+
+        return shortestPathLits;
+    }
+
+    private Map<Map.Entry<Location, Location>, Integer> cachePathSize = new HashMap<>();
+
+    private int findPathTo(Location source, Location dest, Set<Location> visited) {
+        if (source.equals(dest))
+            return 0;
+
+        if (visited.contains(source))
+            return Integer.MAX_VALUE;
+
+        visited.add(source);
+
+        var entry = Map.entry(source, dest);
+
+        if (cachePathSize.containsKey(entry))
+            return cachePathSize.get(entry);
+
+        int minPathLength = Integer.MAX_VALUE;
+
+        for (var adj : getAdjacentLocations(source)) {
+
+            if (!visited.contains(adj)) {
+                int next = findPathTo(adj, dest, visited);
+                if (next < minPathLength) {
+                    minPathLength = next;
+                }
+            }
+        }
+
+        if (minPathLength == Integer.MAX_VALUE) {
+            return minPathLength;
+        }
+
+        cachePathSize.put(entry, minPathLength + 1);
+        return minPathLength + 1;
+
     }
 
     public String dumpMapBeliefs() {
@@ -375,6 +480,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         dirListTerm.addAll(getNearestObjectDirections(location, GOAL));
         return ASSyntax.createLiteral("locDirToGoal", getLocationLiteral(location), dirListTerm);
     }
+
     @NotNull
     private List<Literal> getDirectionsToDispensers(Location location) {
         var redDispenserDirs = new ListTermImpl();
@@ -417,8 +523,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return ASSyntax.createLiteral("locAdjacent", locationLit, adjListTerm);
     }
 
-    public Location delta(Location src, Location dst)
-    {
+    public Location delta(Location src, Location dst) {
         Location delta = new Location(dst.x - src.x, dst.y - src.y);
         if ((Math.abs(delta.x) != 1 && Math.abs(delta.y) != 1) || (delta.x == delta.y)) {
             logger.warning("Invalid Direction? " + delta);
@@ -428,9 +533,8 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return delta;
     }
 
-    public Location getLastDirection()
-    {
-        if(lastPosition == null)
+    public Location getLastDirection() {
+        if (lastPosition == null)
             return new Location(0, 0);
         return delta(lastPosition, getAgPos(AGENT_IDX));
     }
@@ -478,11 +582,11 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return adjSet;
     }
 
-    public static LocalizationMapModel loadFromFile() {
+    public static LocalizationMapModel loadFromFile(LocalizationMapView.MapType mapType) {
         Gson gson = new Gson();
         JsonReader reader = null;
         try {
-            reader = new JsonReader(new FileReader("map.json"));
+            reader = new JsonReader(new FileReader(mapType.getFileName()));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to load map!", e);
@@ -492,29 +596,102 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return new LocalizationMapModel(map);
     }
 
+    private LinkedList<Map<Location, Literal>> perms = new LinkedList<>();
+
+    private void genPerceptPerms(Location l) {
+        if (perms.isEmpty()) {
+            Map<Location, Literal> map = new HashMap<>();
+            map.put(l, ASSyntax.createLiteral("percept", getLocationLiteral(l), OBSTACLE.getTerrainAtom()));
+            perms.add(map);
+
+            Map<Location, Literal> mapTwo = new HashMap<>();
+            mapTwo.put(l, ASSyntax.createLiteral("percept", getLocationLiteral(l), NONE.getTerrainAtom()));
+            perms.add(mapTwo);
+            return;
+        }
+
+        HashSet<Map<Location, Literal>> newMaps = new HashSet<>();
+
+        for (var entry : perms) {
+            Map<Location, Literal> map = new HashMap<>(entry);
+            Map<Location, Literal> mapTwo = new HashMap<>(entry);
+
+            map.put(l, ASSyntax.createLiteral("percept", getLocationLiteral(l), OBSTACLE.getTerrainAtom()));
+            mapTwo.put(l, ASSyntax.createLiteral("percept", getLocationLiteral(l), NONE.getTerrainAtom()));
+
+            newMaps.add(map);
+            newMaps.add(mapTwo);
+        }
+
+        perms.clear();
+        perms.addAll(newMaps);
+    }
+
     public List<Literal> getPercepts(Location agentPos) {
-        int x = agentPos.x;
-        int y = agentPos.y;
+        Location left = new Location(-1, 0);
+        Location right = new Location(1, 0);
+        Location down = new Location(0, 1);
+        Location up = new Location(0,  -1);
+
+        if (perms.isEmpty() && !usedNone) {
+            usedNone = true;
+            genPerceptPerms(left);
+            genPerceptPerms(right);
+            genPerceptPerms(up);
+            genPerceptPerms(down);
+            System.out.println(perms.size());
+        }
 
         // Get directional percepts
         var arrList = new ArrayList<Literal>();
 
+        if (UNIQUE_PERCEPTS) {
+            for (int i = -5; i < 5; i++) {
+                for (int j = -5; j < 5; j++) {
+                    arrList.add(getDirPercept(agentPos, i, j));
+                }
+            }
 
-        arrList.add(getDirPercept(agentPos,0, -1));
-        arrList.add(getDirPercept(agentPos,0, 1));
-        arrList.add(getDirPercept(agentPos,-1, 0));
-        arrList.add(getDirPercept(agentPos,1, 0));
-//        arrList.add(ASSyntax.createLiteral("up", getPerceptAtom(x, y - 1)));
-//        arrList.add(ASSyntax.createLiteral("down", getPerceptAtom(x, y + 1)));
-//        arrList.add(ASSyntax.createLiteral("right", getPerceptAtom(x + 1, y)));
-//        arrList.add(ASSyntax.createLiteral("left", getPerceptAtom(x - 1, y)));
+        } else if (MAX_PERCEPTS){
+            if (perms.isEmpty()) {
+                arrList.add(getDirPercept(agentPos, 0, -1));
+                arrList.add(getDirPercept(agentPos, 0, 1));
+                arrList.add(getDirPercept(agentPos, -1, 0));
+                arrList.add(getDirPercept(agentPos, 1, 0));
 
+            } else {
+                var map = perms.removeFirst();
+                arrList.add(map.get(left));
+                arrList.add(map.get(right));
+                arrList.add(map.get(up));
+                arrList.add(map.get(down));
+            }
+        } else {
+            arrList.add(getDirPercept(agentPos, 0, -1));
+            arrList.add(getDirPercept(agentPos, 0, 1));
+            arrList.add(getDirPercept(agentPos, -1, 0));
+            arrList.add(getDirPercept(agentPos, 1, 0));
+        }
         return arrList;
     }
 
+    private int countUniqueObjects = 1;
+
+
     private Literal getDirPercept(Location cur, int x, int y) {
         Location delta = new Location(cur.x + x, cur.y + y);
-        return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), getPerceptTerrain(delta.x, delta.y).getTerrainAtom());
+        Terrain t = getPerceptTerrain(delta.x, delta.y);
+        Atom a = t.getTerrainAtom();
+
+        if (UNIQUE_PERCEPTS) {
+            countUniqueObjects++;
+            return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), ASSyntax.createAtom(String.valueOf(Math.random())));
+        }
+
+        if (!usedNone)
+            return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), NONE.getTerrainAtom());
+        else
+            return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), OBSTACLE.getTerrainAtom());
     }
 
     @Override
@@ -572,9 +749,6 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     public LocalizationMapView getView() {
         return (LocalizationMapView) this.view;
-    }
-
-    public void generateASL() {
     }
 
     public synchronized void signalInput(boolean val) {
