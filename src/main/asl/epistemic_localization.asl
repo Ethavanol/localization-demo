@@ -15,9 +15,12 @@ isAdjacent(Prev, Dir, Cur) :-
     .member(adjacent(Dir, Prev), AdjList).
 
 
+possible(location(X + 1, Y))
+    :- possible(location(X, Y)) & moved(right).
 
-vals([percept(location(0,-1),none), percept(location(0,1), none), percept(location(1,0), none), percept(location(-1,0), none)]).
 
+// Evaluation testing
+//vals([percept(location(0,-1),none), percept(location(0,1), none), percept(location(1,0), none), percept(location(-1,0), none)]).
 // The following plan runs when the agent moves and perceptions are updated
 //@moved[atomic]
 //+moved
