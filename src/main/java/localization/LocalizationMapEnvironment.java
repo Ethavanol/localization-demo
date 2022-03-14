@@ -1,5 +1,6 @@
 package localization;
 
+import epistemic.DebugConfig;
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Literal;
 import jason.asSyntax.ObjectTermImpl;
@@ -25,7 +26,8 @@ public abstract class LocalizationMapEnvironment extends Environment implements 
         localizationMapModel = localizationMapView.getModel();
 
         localizationMapModel.addMapListener(this);
-        localizationMapView.setVisible(true);
+        if(DebugConfig.getInstance().showGUI())
+            localizationMapView.setVisible(true);
         super.init(args);
 
     }
@@ -57,7 +59,7 @@ public abstract class LocalizationMapEnvironment extends Environment implements 
         MapEvent nextEvent = mapEventQueue.poll();
 
         curPercepts.add(ASSyntax.createAtom("moved"));
-//        curPercepts.addAll(nextEvent.getPerceptions());
+        curPercepts.addAll(nextEvent.getPerceptions());
         curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
         return curPercepts;

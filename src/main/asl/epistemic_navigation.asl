@@ -26,9 +26,8 @@ closest(goal, Dir) :- location(X, Y) & locDirToGoal(location(X,Y), Dirs) & .memb
 +!navigate(Object)
     :   possible(closest(Object, Dir)) & Dir \== none
     <-  .print(Object, " in ", Dir);
-        //move(Dir);
-        .wait(500).
-//        !navigate(Object).
+        move(Dir);
+        !navigate(Object).
 
 +!navigate(Object)
     :   closest(Object, none)

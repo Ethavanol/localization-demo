@@ -14,18 +14,33 @@ isAdjacent(Prev, Dir, Cur) :-
     locAdjacent(Cur, AdjList) &
     .member(adjacent(Dir, Prev), AdjList).
 
-vals([percept(location(0,-1),obstacle), percept(location(0,1), obstacle), percept(location(1,0), obstacle), percept(location(-1,0), obstacle)]).
+
+
+vals([percept(location(0,-1),none), percept(location(0,1), none), percept(location(1,0), none), percept(location(-1,0), none)]).
 
 // The following plan runs when the agent moves and perceptions are updated
+//@moved[atomic]
+//+moved
+//    : .length(L) == 0 |
+//        (vals(L) & [H|T] = L)
+//    <-  .print("I Moved.");
+//        +H;
+//        -vals(_);
+//        +vals(T);
+////        !updateAdjacent; // Update the adjacent locations based on movement from our previous locations to further eliminate worlds
+////        !updatePrevious;
+//        !updateGUIPossible. // Now we can update the GUI with locations that are possible/known
+
 @moved[atomic]
 +moved
-    : .length(L) == 0 |
-        (vals(L) & [H|T] = L)
     <-  .print("I Moved.");
-        +H;
-        -vals(_);
-        +vals(T);
-//        !updateAdjacent; // Update the adjacent locations based on movement from our previous locations to further eliminate worlds
+        internal.test_query(5, possible(take(X)));
+        internal.test_query(50, possible(take(X)));
+        internal.test_query(5, ~take(X));
+        internal.test_query(50, ~take(X));
+        internal.test_query(5, fake(X));
+        internal.test_query(50, fake(X));
+        !updateAdjacent; // Update the adjacent locations based on movement from our previous locations to further eliminate worlds
 //        !updatePrevious;
         !updateGUIPossible. // Now we can update the GUI with locations that are possible/known
 

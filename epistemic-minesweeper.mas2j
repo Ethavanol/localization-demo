@@ -1,0 +1,15 @@
+
+MAS epistemic_agents {
+
+    infrastructure: Centralised
+	environment: minesweeper.MineSweeperEnvironment
+
+	//executionControl: jason.control.ExecutionControlGUI
+
+	agents:
+	   epistemic_minesweeper agentClass minesweeper.MineSweeperAgent #1;
+
+	aslSourcePath: "src/main/asl";
+	
+    
+}

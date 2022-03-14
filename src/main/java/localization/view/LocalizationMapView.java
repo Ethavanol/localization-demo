@@ -1,5 +1,6 @@
 package localization.view;
 
+import epistemic.DebugConfig;
 import jason.environment.grid.GridWorldView;
 import localization.models.LocalizationMapModel;
 
@@ -30,16 +31,17 @@ public class LocalizationMapView extends GridWorldView {
         settingsPanel = new SettingsPanel(this);
 
         // Initialize settings bar
-        super.getContentPane().add(BorderLayout.SOUTH, settingsPanel);
+        if (DebugConfig.getInstance().showSettingsPanel())
+            super.getContentPane().add(BorderLayout.SOUTH, settingsPanel);
     }
 
     @Override
     public void drawAgent(Graphics g, int x, int y, Color c, int id) {
-        if(id == 0)
+        if (id == 0)
             super.drawAgent(g, x, y, c, id);
-        if(id == 1)
+        if (id == 1)
             super.drawAgent(g, x, y, Color.red, id);
-        if(id == 2)
+        if (id == 2)
             super.drawAgent(g, x, y, Color.green, id);
     }
 
@@ -58,10 +60,9 @@ public class LocalizationMapView extends GridWorldView {
         }
 
         if ((object & LocalizationMapModel.POSSIBLE) != 0) {
-            drawEmpty(g,x,y);
+            drawEmpty(g, x, y);
             drawPossible(g, x, y);
         }
-
 
 
     }
@@ -69,7 +70,7 @@ public class LocalizationMapView extends GridWorldView {
     private void drawDispenser(Graphics g, int x, int y, Color color) {
         g.setColor(color);
         var size = 20;
-        g.fill3DRect(x * cellSizeW + size, y * cellSizeH + size, cellSizeW - (2*size), cellSizeH - (2*size), true);
+        g.fill3DRect(x * cellSizeW + size, y * cellSizeH + size, cellSizeW - (2 * size), cellSizeH - (2 * size), true);
 
     }
 
@@ -86,10 +87,9 @@ public class LocalizationMapView extends GridWorldView {
             return;
 
         g.setColor(Color.RED);
-        if(model.getAgAtPos(x, y) == -1)
+        if (model.getAgAtPos(x, y) == -1)
             g.drawOval(x * cellSizeW + 1, y * cellSizeH + 1, cellSizeW - 2, cellSizeH - 2);
-        else
-        {
+        else {
             g.fillOval(x * cellSizeW, y * cellSizeH, cellSizeW, cellSizeH);
         }
     }
@@ -103,18 +103,17 @@ public class LocalizationMapView extends GridWorldView {
         return model;
     }
 
-    public SettingsPanel getSettingsPanel()
-    {
+    public SettingsPanel getSettingsPanel() {
         return this.settingsPanel;
     }
 
 
-    public enum MapType
-    {
+    public enum MapType {
         LOCALIZATION("localization_map.json"),
         IDENTIFICATION("identification_map.json");
 
         private String fileName;
+
         MapType(String s) {
             this.fileName = s;
         }

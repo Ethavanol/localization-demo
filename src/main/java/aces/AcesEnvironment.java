@@ -1,6 +1,5 @@
 package aces;
 
-import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Literal;
 import jason.asSyntax.Structure;
 import jason.environment.Environment;
@@ -36,7 +35,7 @@ public class AcesEnvironment extends Environment {
 
 //        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Bob"), ASSyntax.createString("AA")));
 //        curPercepts.add(ASSyntax.createLiteral("cards", ASSyntax.createString("Charlie"), ASSyntax.createString("AA")));
-        curPercepts.add(ASSyntax.createLiteral("peekedCard", ASSyntax.createString("A")));
+//        curPercepts.add(ASSyntax.createLiteral("peekedCard", ASSyntax.createString("A")));
         return curPercepts;
     }
 
