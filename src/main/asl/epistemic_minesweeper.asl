@@ -51,8 +51,14 @@ mine(X, Y) :- grid(P) & grid_perms(P, Mines, _) & .member([X, Y], Mines).
 hint(X, Y, N) :- grid(P) & grid_perms(_, _, Hints) & .member(hint(X, Y, N), Hints).
 /* End range/valuation rules */
 
-possible(mine(X + 1, Y))
-    :- possible(mine(X, Y)) & moved(right).
+
+
+//possible(mine(X + 1, Y))
+//    :- mine(X, Y) & ~mine(3, Y).
+//
+//
+//possible(mine(X + 1, Y))
+//        :- ~mine(X, Y) & Y == 5 & test.
 
 /* Jason Plans */
 // Percepts are lost, done, clicked(X, Y), and hint(X, Y, N), which change when the agent performs click(X, Y)
