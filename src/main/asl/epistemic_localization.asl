@@ -21,13 +21,119 @@ isAdjacent(Prev, Dir, Cur) :-
 // pre: location(X, Y)
 // post: location(X - 1, Y)
 
-possible(location(X - 1, Y))
-    :- possible(location(X, Y)) & lastMove(left).
+//possible(location(X - 1, Y))
+//    :- location(X, Y) & (true | lastMove(left)).
+
+
++model(moved)
+    :   ~location(4, _)
+    <-  post(NewPer, location(X, Y) & locPercept(location(X + 1, Y), NewPer));
+        effects(NewPer, location(X, Y) & locPercept(location(X + 1, Y), NewPer)).
+
+
+
++moved
+    :   location(4, _)
+    <-  post(NewPer, location(X, Y) & locPercept(location(X + 1, Y), NewPer));
+        effects(NewPer, location(X, Y) & locPercept(location(X + 1, Y), NewPer)).
+
+
+
+
+event(moved(right)) :- agent_moves_right.
+
+// For event +moved(right)
+pre(moved(right)) :- ~location(4, _) & true. // If not at edge
+post(moved(right), NewPer, false) :- location(X, Y) & locPercept(location(X + 1, Y), NewPer).
+
+
+
+event(moved_right(failed)) :- ~agent_moves_right.
+pre(moved_right(failed)) :- location(4, _).
+
+
+
+
+
+// For event +move_failed(right)
+pre(move_failed(right)) :- location(4, _). // Only fails if at edge
+// No post condition
+
+
+~locationa(4,4).
+
+event(move(right)) :- true. // | moved(right).
+//pre(move(right)) :- (~locationa(4, _)) | ((X == 4) & (test | X >= 4)) . // If not at edge
+//pre(move(right)) :- ~((~locationa(4, _)) & ~((X /= 4) & (test | X >= 4))) . // If not at edge
+//pre(move(right)) :- ~((~locationa(4, _)) & (.member(X, [4]) & (test | X >= 4))) . // If not at edge
+pre(move(right)) :- ~locationa(4, _) & (.member(X, [4]) & (test | X >= 4)) . // If not at edge
+pre(move(right)) :- ~locationa(4, _) & (.member(X, [4]) & (test | X >= 4)) . // If not at edge
+
+
+// old
+//pre(move(right)) :- ~locationa(4, _) & not (false) | (.member(X, [4]) & (test | X >= 4)) . // If not at edge
+post(move(right), NewPer, false) :- location(X, Y) & locPercept(location(X + 1, Y), NewPer).
+
+post(move(right), l1) :- l_1.
+post(move(right), l1) :- l_2.
+
+// Alternatively:
+// performed(move(right)) :- moved(right).
+// condition(move(right)) :- moved(right) & ~percept(east, obstacle) & ~location(4, _).
+// effects(move(right), [location(X, 23), ~location(X, Y)]) :- location(X, Y) & locPercept(location(X, Y), Perceptions).
+
+
+// OR:
+//event(move(right)) :- moved(right).
+//move(right) :- moved(right) & ~percept(east, obstacle) & ~location(4, _).
+//effects(move(right), [location(X, 23), ~location(X, Y)]) :- location(X, Y) & locPercept(location(X, Y), Perceptions).
+
+
+// Best integration because of 'event' term overload: Event +E occurs in Jason
+// In events set: +moved(right)
+// pre(moved(right)) :- ~percept(east, obstacle) & ~location(4, _).
+// effects(moved(right), [location(X, 23), ~location(X, Y)])
+//      :- location(X, Y) & locPercept(location(X, Y), Perceptions)
+
+
+//+moved(east)
+//    : ~percept(east, obstacle) & ~location(4, _)
+//    <- effects([location(X, 23), ~location(X, Y)], location(X, Y) & locPercept(location(X, Y), Perceptions)).
+
+
+/*
+Event syntax:
+
+event(e) :- bb_cond. // As a modeller, determine whether event e is applicable to current update. Use BB only for bb_cond
+
+pre(e) :- cond.  // Whether event e is applicable to current model
+
+post(e, {Add Props}, {Remove Props}) :- cond. // Add and remove explicit propositions
+post(e, {Replace Props}) :- cond. // Replace all existing props with new propositions. Shortcut for: post(e, V(new_w), V(old_w)/V(new_w))
+
+
+Example:
+event(move(right)) :- moved(right).
+pre(move(right)) :- ~block(right) & ~location(4, 0). // If not blocked and not at edge
+post(move(right), worldProps(X+1, Y)) :- location(X, Y).
+
+event(move(fail)) :- moved(fail).
+pre(move(right)) :- block(right) | location(4, 0).
+
+
+
+*/
+
+
+
+// DO this:
+//possible(location(X - 1, Y))
+//    :- possible(location(X, Y)) & lastMove(left).
 // location(1, 1) :- location(0, 1)
 // location(1, 1) :- percept(up, block)
 
 
-post(click(X, Y)) :- ~click(X, Y);
+//post(click(X, Y)) :- ~click(X, Y).
 // click(1, 1) :- ~click(1, 1)
 
 
@@ -35,7 +141,7 @@ post(click(X, Y)) :- ~click(X, Y);
 
 // V(w) => click(1,1) Francois
 // V(w) => click(1,1)
-post(click(1, 1)) :- ~click(1, 1) & clicked(1, 1);
+//post(click(1, 1)) :- ~click(1, 1) & clicked(1, 1);
 
 // possible(location(0, 0)) ...
 // 1. Find all worlds where this is true: WT

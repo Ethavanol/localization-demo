@@ -43,7 +43,7 @@ all_locations(3,3).
 /* End Generated Data */
 
 /* Begin range/valuation rules */
-range(grid(X)) :- grid_perms(X, _, _).
+range(grid(X)) :- .member(X, [1, 2, 3, 4]).
 range(mine(X, Y)) :- all_locations(X, Y).
 range(hint(X, Y, N)) :- all_locations(X, Y) & .member(N, [-1, 0, 1, 2]).
 
