@@ -1,0 +1,16 @@
+
+MAS epistemic_agents {
+
+    infrastructure: Centralised
+
+	 environment: identification.IdentificationMapEnvironment
+
+	//executionControl: jason.control.ExecutionControlGUI
+
+	agents:
+	    epistemic_identification agentClass localization.EpistemicLocalizationAg agentArchClass localization.LocalizationAgArch #1;
+
+	aslSourcePath: "src/main/asl";
+	
+    
+}

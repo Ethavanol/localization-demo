@@ -1,48 +1,55 @@
 package localization;
 
-import jason.asSyntax.*;
+// import epistemic.DebugConfig;
+import jason.asSyntax.ASSyntax;
+import jason.asSyntax.Literal;
+import jason.asSyntax.ObjectTermImpl;
+import jason.asSyntax.Structure;
 import jason.environment.Environment;
+import localization.models.LocalizationMapModel;
 import localization.models.MapEvent;
 import localization.view.LocalizationMapView;
-import localization.models.LocalizationMapModel;
 
 import java.util.*;
 
-public class LocalizationMapEnvironment extends Environment implements MapEventListener {
+public abstract class LocalizationMapEnvironment extends Environment implements MapEventListener {
 
+    private Queue<MapEvent> mapEventQueue;
 
-    // Hack to access from agent....
-    public static LocalizationMapEnvironment instance;
-
-    private final LocalizationMapView localizationMapView;
-    private final LocalizationMapModel localizationMapModel;
-    private final Queue<MapEvent> mapEventQueue;
-
-    public LocalizationMapEnvironment() {
-        instance = this;
-        this.mapEventQueue = new LinkedList<>();
-        localizationMapView = new LocalizationMapView();
-        localizationMapModel = localizationMapView.getModel();
-
-        // Generate the map information beliefs based on the loaded map
-        localizationMapModel.generateASL();
-
-
-
-        localizationMapModel.addMapListener(this);
-        localizationMapView.setVisible(true);
-    }
+    private LocalizationMapView localizationMapView;
+    private LocalizationMapModel localizationMapModel;
 
     @Override
     public void init(String[] args) {
+        this.mapEventQueue = new LinkedList<>();
+
+        // Dump all map type beliefs
+
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_5x5);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_10x10);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_20x20);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_30x30);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_40x40);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_50x50);
+        // LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_100x100);
+
+
+
+        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION_5x5);
+        localizationMapModel = localizationMapView.getModel();
+
+        localizationMapModel.addMapListener(this);
+        // if(DebugConfig.getInstance().showGUI())
+            localizationMapView.setVisible(true);
         super.init(args);
+
     }
 
     @Override
     public synchronized Collection<Literal> getPercepts(String agName) {
         // No change in perceptions if the agent hasn't moved
         // Also, keep current percepts if the agent is not done reasoning
-        super.clearPercepts(agName);
+        clearPercepts(agName);
 
         var curPercepts = super.getPercepts(agName);
 
@@ -61,17 +68,12 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
             return null;
 
 
-
-
         // Get next event to process
         MapEvent nextEvent = mapEventQueue.poll();
 
         curPercepts.add(ASSyntax.createAtom("moved"));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(2), ASSyntax.createNumber(1)));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LPos, "location", ASSyntax.createNumber(1), ASSyntax.createNumber(1)));
-//        curPercepts.add(ASSyntax.createLiteral(Literal.LNeg, "location", ASSyntax.createNumber(3), ASSyntax.createNumber(3)));
         curPercepts.addAll(nextEvent.getPerceptions());
-        curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirection()));
+        curPercepts.add(ASSyntax.createLiteral("lastMove", nextEvent.getMoveDirectionAtom()));
 
         return curPercepts;
     }
@@ -86,7 +88,6 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
 
         return persistPercepts;
     }
-
 
     @Override
     public synchronized void agentMoved(MapEvent event) {
@@ -103,4 +104,21 @@ public class LocalizationMapEnvironment extends Environment implements MapEventL
     public LocalizationMapModel getModel() {
         return localizationMapModel;
     }
+
+    @Override
+    public final boolean executeAction(String agName, Structure act) {
+        if(act.getFunctor().equals("move"))
+        {
+            String dir = act.getTerm(0).toString();
+            if(dir.equals("right")) localizationMapModel.moveRight();
+            if(dir.equals("left")) localizationMapModel.moveLeft();
+            if(dir.equals("up")) localizationMapModel.moveUp();
+            if(dir.equals("down")) localizationMapModel.moveDown();
+            return true;
+        }
+
+        return executeAction(agName, act.getFunctor(), act);
+    }
+
+    public abstract boolean executeAction(String agName, String actionName, Structure action);
 }

@@ -1,5 +1,6 @@
 package localization.view;
 
+import epistemic.DebugConfig;
 import jason.environment.grid.GridWorldView;
 import localization.models.LocalizationMapModel;
 
@@ -20,6 +21,7 @@ public class LocalizationMapView extends GridWorldView {
         this.model = model;
         this.getCanvas().addKeyListener(model);
         this.getModel().addMapListener(settingsPanel);
+
     }
 
     @Override
@@ -29,9 +31,19 @@ public class LocalizationMapView extends GridWorldView {
         settingsPanel = new SettingsPanel(this);
 
         // Initialize settings bar
-        super.getContentPane().add(BorderLayout.SOUTH, settingsPanel);
+        if (DebugConfig.getInstance().showSettingsPanel())
+            super.getContentPane().add(BorderLayout.SOUTH, settingsPanel);
     }
 
+    @Override
+    public void drawAgent(Graphics g, int x, int y, Color c, int id) {
+        if (id == 0)
+            super.drawAgent(g, x, y, c, id);
+        if (id == 1)
+            super.drawAgent(g, x, y, Color.red, id);
+        if (id == 2)
+            super.drawAgent(g, x, y, Color.green, id);
+    }
 
     @Override
     public void draw(Graphics g, int x, int y, int object) {
@@ -39,10 +51,27 @@ public class LocalizationMapView extends GridWorldView {
             drawGoal(g, x, y);
         }
 
+        if ((object & LocalizationMapModel.RED_DISP) != 0) {
+            drawDispenser(g, x, y, Color.RED);
+        }
+
+        if ((object & LocalizationMapModel.BLUE_DISP) != 0) {
+            drawDispenser(g, x, y, Color.BLUE);
+        }
+
         if ((object & LocalizationMapModel.POSSIBLE) != 0) {
-//            drawEmpty(g,x,y);
+            drawEmpty(g, x, y);
             drawPossible(g, x, y);
         }
+
+
+    }
+
+    private void drawDispenser(Graphics g, int x, int y, Color color) {
+        g.setColor(color);
+        var size = 20;
+        g.fill3DRect(x * cellSizeW + size, y * cellSizeH + size, cellSizeW - (2 * size), cellSizeH - (2 * size), true);
+
     }
 
     private void drawGoal(Graphics g, int x, int y) {
@@ -58,16 +87,15 @@ public class LocalizationMapView extends GridWorldView {
             return;
 
         g.setColor(Color.RED);
-        if(model.getAgAtPos(x, y) == -1)
+        if (model.getAgAtPos(x, y) == -1)
             g.drawOval(x * cellSizeW + 1, y * cellSizeH + 1, cellSizeW - 2, cellSizeH - 2);
-        else
-        {
+        else {
             g.fillOval(x * cellSizeW, y * cellSizeH, cellSizeW, cellSizeH);
         }
     }
 
-    public LocalizationMapView() {
-        this(LocalizationMapModel.loadFromFile());
+    public LocalizationMapView(MapType mapType) {
+        this(LocalizationMapModel.loadFromFile(mapType));
     }
 
     @Override
@@ -75,11 +103,31 @@ public class LocalizationMapView extends GridWorldView {
         return model;
     }
 
-    public SettingsPanel getSettingsPanel()
-    {
+    public SettingsPanel getSettingsPanel() {
         return this.settingsPanel;
     }
 
+
+    public enum MapType {
+        LOCALIZATION_5x5("maps\\localization_map_5x5.json"),
+        LOCALIZATION_10x10("maps\\localization_map_10x10.json"),
+        LOCALIZATION_20x20("maps\\localization_map_20x20.json"),
+        LOCALIZATION_30x30("maps\\localization_map_30x30.json"),
+        LOCALIZATION_40x40("maps\\localization_map_40x40.json"),
+        LOCALIZATION_50x50("maps\\localization_map_50x50.json"),
+        // LOCALIZATION_100x100("maps\\localization_map_100x100.json"),
+        IDENTIFICATION("identification_map.json");
+
+        private String fileName;
+
+        MapType(String s) {
+            this.fileName = s;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+    }
 
 }
 
