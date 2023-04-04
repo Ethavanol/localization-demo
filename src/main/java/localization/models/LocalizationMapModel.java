@@ -3,10 +3,9 @@ package localization.models;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import epistemic.DebugConfig;
-import jason.asSyntax.ASSyntax;
-import jason.asSyntax.Atom;
-import jason.asSyntax.ListTermImpl;
-import jason.asSyntax.Literal;
+import jason.asSemantics.Unifier;
+import jason.asSyntax.*;
+import jason.asSyntax.parser.ParseException;
 import jason.environment.grid.GridWorldModel;
 import jason.environment.grid.Location;
 import localization.MapEventListener;
@@ -30,6 +29,10 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     private static final Terrain OBSTACLE = Terrain.OBSTACLE;
     private static final Terrain NONE = Terrain.NONE;
     private static final int AGENT_IDX = 0;
+    private static final String NORTH = "up";
+    private static final String SOUTH = "down";
+    private static final String EAST = "left";
+    private static final String WEST = "right";
 
 
     private List<MapEventListener> mapEventListeners;
@@ -46,6 +49,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
     // Should we be using loc perceptions: percept(loc(0,-1)...) instead of percept(north,...)
     private static final boolean SHOULD_USE_REL_PERCEPTS = false;
+    private static final boolean GENERATE_DIRS = true; // not needed when we generate larger maps
 
     public LocalizationMapModel(int w, int h, int nbAgs) {
         super(w, h, nbAgs);
@@ -55,7 +59,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         this.possibleLocations = new ArrayList<>();
     }
 
-    public LocalizationMapModel(LocalizationMap map) {
+    public LocalizationMapModel(LocalizationMap map, LocalizationMapView.MapType mapType) {
         this(map.getWidth(), map.getHeight(), 1 + DebugConfig.getInstance().getExtraAgents().size());
 
 
@@ -70,13 +74,16 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
         this.initialLocation = map.getAgentStart();
 
+        MapMarker prev = null;
         for (var marker : map.getMarkers()) {
             if (marker.getType() == GOAL)
                 goalLocations.add(marker.getLocation());
+
             this.add(marker.getType(), marker.getLocation().x, marker.getLocation().y);
+            prev = marker;
         }
 
-        File newFile = new File("./generated_map_data.asl");
+        File newFile = new File("./generated_map_data_" + mapType.name() + ".asl");
         try {
 
             // Delete existing file
@@ -204,9 +211,16 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return null;
     }
 
+    Map<List<Integer>, Integer> closestObjCache = new HashMap<>();
+
     private int findPathToClosestObject(Location curLocation, int obj) {
         Queue<Location> bfsQ = new LinkedList<>();
         Set<Location> visited = new HashSet<>();
+
+        List<Integer> key = List.of(curLocation.x, curLocation.y, obj);
+
+        if (closestObjCache.containsKey(key))
+            return closestObjCache.get(key);
 
         bfsQ.add(curLocation);
         int pathLength = 0;
@@ -220,8 +234,10 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
                 if (visited.contains(next))
                     continue;
 
-                if (hasObject(obj, next))
+                if (hasObject(obj, next)) {
+                    closestObjCache.put(key, pathLength);
                     return pathLength;
+                }
 
                 visited.add(next);
 
@@ -233,6 +249,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
             pathLength++;
         }
 
+        closestObjCache.put(key, Integer.MAX_VALUE);
         return Integer.MAX_VALUE;
     }
 
@@ -329,21 +346,64 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     public List<Literal> dumpMapBeliefsToBB() {
         List<Literal> bels = new ArrayList<>();
 
-        countUniqueObjects = 0;
+//        countUniqueObjects = 0;
+//        for (Location location : getAllLocations()) {
+//            if (!inGrid(location))
+//                continue;
+//
+//            if (!isFreeOfObstacle(location)) {
+//                bels.add(getLocationLiteral(location).setNegated(Literal.LNeg));
+//                continue;
+//            }
+//
+//            bels.addAll(getLocationPercepts(location));
+//            bels.add(getAdjacentBelief(location));
+//            bels.addAll(getDirectionsToGoal(location));
+//            bels.addAll(getDirectionsToDispensers(location));
+//            bels.add(getGoalRel(location));
+////            bels.addAll(getShortestPathDirs(location));
+//        }
+//
+//        logger.info("number of unique objects: " + countUniqueObjects);
+
+        Map<Location, List<Literal>> locationPercepts = new LinkedHashMap<>();
+        Map<Location, Literal> adjBeliefs = new LinkedHashMap<>();
+        Map<Location, List<Literal>> dirGoalBeliefs = new LinkedHashMap<>();
+
+
+        // Generate range and single rules
+        var rangeSingleRule = createRange(getWidth(), getHeight());
+        bels.addAll(rangeSingleRule);
+
         for (Location location : getAllLocations()) {
-            if (!inGrid(location) || !isFreeOfObstacle(location))
+            if (!inGrid(location))
                 continue;
 
-            bels.add(getLocationPercepts(location));
-            bels.add(getAdjacentBelief(location));
-            bels.add(getDirectionsToGoal(location));
-            bels.addAll(getDirectionsToDispensers(location));
-            bels.add(getGoalRel(location));
-//            bels.addAll(getShortestPathDirs(location));
+            if (!isFreeOfObstacle(location)) {
+                bels.add(getLocationLiteral(location).setNegated(Literal.LNeg));
+                continue;
+            }
+
+            locationPercepts.put(location, getLocationPercepts(location));
+            adjBeliefs.put(location, getAdjacentBelief(location));
+
+            var dirListTerm = getDirectionsToObj(location, GOAL);
+            if (!dirListTerm.isEmpty())
+                dirGoalBeliefs.put(location, dirListTerm);
+
+//            Literal goalRelTerm = getGoalRel(location);
+//            goalRelBeliefs.put(location, goalRelTerm);
         }
 
-        logger.info("number of unique objects: " + countUniqueObjects);
+        for (var entry : locationPercepts.entrySet())
+            if (!entry.getValue().isEmpty()) {
+//                fileString.append(getBeliefASLString("Percept Mappings for " + entry.getKey(), entry.getValue()));
+                bels.addAll(entry.getValue());
+            }
 
+        for (var entry : dirGoalBeliefs.entrySet())
+            bels.addAll(entry.getValue());
+        //            fileString.append(getBeliefASLString("Goal Direction Mappings for " + entry.getKey(), entry.getValue()));
         return bels;
     }
 
@@ -432,35 +492,121 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     }
 
     public String dumpMapBeliefs() {
-        Map<Location, Literal> locationPercepts = new LinkedHashMap<>();
+        Map<Location, List<Literal>> locationPercepts = new LinkedHashMap<>();
         Map<Location, Literal> adjBeliefs = new LinkedHashMap<>();
-        Map<Location, Literal> dirGoalBeliefs = new LinkedHashMap<>();
+        Map<Location, List<Literal>> dirGoalBeliefs = new LinkedHashMap<>();
         Map<Location, List<Literal>> dirDispBeliefs = new LinkedHashMap<>();
-        Map<Location, Literal> goalRelBeliefs = new LinkedHashMap<>();
+//        Map<Location, List<Literal>> dirDispBeliefs = new LinkedHashMap<>();
+//        Map<Location, Literal> goalRelBeliefs = new LinkedHashMap<>();
+
+
+//        var xVar = new VarTerm("X");
+//        var yVar = new VarTerm("Y");
+//        Literal locRange = new Rule(ASSyntax.createLiteral("range", ), body);
+
+        StringBuilder fileString = new StringBuilder();
+
+        fileString.append("/** These are the beliefs generated for the map that are added automatically to the BB **/\n")
+                .append("/** This file is not loaded by the agent. It is just the output for debugging purposes and will be overwritten. **/\n");
+
+
+        // Generate range and single rules
+        var rangeSingleRule = createRange(getWidth(), getHeight());
+        for (Rule r : rangeSingleRule)
+            fileString.append(r).append(".\n");
+
+        fileString.append("\n");
 
         for (Location location : getAllLocations()) {
-            if (!inGrid(location) || !isFreeOfObstacle(location))
+            if (!inGrid(location))
                 continue;
+
+            if (!isFreeOfObstacle(location)) {
+                fileString.append(getLocationLiteral(location).setNegated(Literal.LNeg));
+                fileString.append(".\r\n");
+                continue;
+            }
 
             locationPercepts.put(location, getLocationPercepts(location));
             adjBeliefs.put(location, getAdjacentBelief(location));
 
-            dirDispBeliefs.put(location, getDirectionsToDispensers(location));
+            if (GENERATE_DIRS) {
+                var dirListTerm = getDirectionsToObj(location, GOAL);
+                if (!dirListTerm.isEmpty())
+                    dirGoalBeliefs.put(location, dirListTerm);
 
-            Literal dirListTerm = getDirectionsToGoal(location);
-            dirGoalBeliefs.put(location, dirListTerm);
-
-            Literal goalRelTerm = getGoalRel(location);
-            goalRelBeliefs.put(location, goalRelTerm);
+                dirListTerm = getDirectionsToObj(location, RED_DISP);
+                if (!dirListTerm.isEmpty())
+                    dirDispBeliefs.put(location, dirListTerm);
+            }
+//            Literal goalRelTerm = getGoalRel(location);
+//            goalRelBeliefs.put(location, goalRelTerm);
         }
 
-        return "/** These are the beliefs generated for the map that are added automatically to the BB **/\n" +
-                "/** This file is not loaded by the agent. It is just the output for debugging purposes and will be overwritten. **/\n" +
-                getBeliefASLString("Map Location Mappings", locationPercepts.values()) +
-                getBeliefASLString("Adjacent Location Mappings", adjBeliefs.values()) +
-                getBeliefASLStringList("Dispenser Direction Mappings", dirDispBeliefs.values()) +
-//                getBeliefASLString("Location Goal Rel. Mappings", goalRelBeliefs.values()) +
-                getBeliefASLString("Goal Direction Mappings", dirGoalBeliefs.values());
+        fileString.append("\r\n");
+        fileString.append("// Obstacle mappings\r\n");
+        for (var entry : locationPercepts.entrySet())
+            if (!entry.getValue().isEmpty())
+                // fileString.append(getBeliefASLString("Percept Mappings for " + entry.getKey(), entry.getValue()));
+                fileString.append(getBeliefASLString("", entry.getValue())); // Don't print comment before beliefs
+
+        try {
+            fileString.append(getBeliefASLString("", List.of(ASSyntax.parseRule("~obs(D) :- not(obs(D))."))));
+            fileString.append("\n");
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        if (!dirGoalBeliefs.isEmpty())
+            fileString.append("// Direction mappings");
+        for (var entry : dirGoalBeliefs.entrySet())
+            fileString.append(getBeliefASLString("", entry.getValue()));
+        for (var entry : dirDispBeliefs.entrySet())
+            fileString.append(getBeliefASLString("", entry.getValue()));
+
+
+        return fileString.toString();
+
+
+//        return
+////                getBeliefASLString("Locations", possibleLocs) +
+////                        perceptString +
+//                        getBeliefASLString("Adjacent Location Mappings", adjBeliefs.values()) +
+////                getBeliefASLStringList("Dispenser Direction Mappings", dirDispBeliefs.values()) +
+//                        goalString;
+////                getBeliefASLString("Location Goal Rel. Mappings", goalRelBeliefs.values()) +
+
+    }
+
+    private List<Rule> createRange(int width, int height) {
+
+        // var xList = new ListTermImpl();
+        // var yList = new ListTermImpl();
+        // for (var loc : allLocations) {
+        //     if (!xList.contains(new NumberTermImpl(loc.x)))
+        //         xList.add(new NumberTermImpl(loc.x));
+        //     if (!yList.contains(new NumberTermImpl(loc.y)))
+        //         yList.add(new NumberTermImpl(loc.y));
+        // }
+
+        // var unif = new Unifier();
+        // unif.bind(new VarTerm("XList"), xList);
+        // unif.bind(new VarTerm("YList"), yList);
+
+        var unif = new Unifier();
+        unif.bind(new VarTerm("Width"), new NumberTermImpl(width - 1));
+        unif.bind(new VarTerm("Height"), new NumberTermImpl(height - 1));
+
+        try {
+            var blankRange = ASSyntax.parseRule("range(loc(X, Y)) :- .range(X, 0, Width) & .range(Y, 0, Height).");
+            // var blankSingle = ASSyntax.parseRule("single(loc(X, Y)) :- .range(X, XList) & .member(Y, YList).");
+            return List.of(new Rule(blankRange, unif) // ,
+                    // new Rule(blankSingle, unif)
+            );
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Literal getGoalRel(Location location) {
@@ -472,18 +618,19 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     private String getBeliefASLString(String heading, Collection<Literal> mapping) {
         StringBuilder builder = new StringBuilder();
 
-        if(!heading.isEmpty())
+        if (!heading.isEmpty())
             builder.append("// ").append(heading).append("\n");
 
         // Print beliefs one X coordinate at a time
         for (var belief : mapping)
             builder.append(belief.toString()).append(".\n");
 
-        if(!heading.isEmpty())
+        if (!heading.isEmpty())
             builder.append("\n");
 
         return builder.toString();
     }
+
     private String getBeliefASLStringList(String heading, Collection<List<Literal>> mapping) {
         StringBuilder builder = new StringBuilder();
         builder.append("// ").append(heading).append("\n");
@@ -498,10 +645,16 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     }
 
     @NotNull
-    private Literal getDirectionsToGoal(Location location) {
-        var dirListTerm = new ListTermImpl();
-        dirListTerm.addAll(getNearestObjectDirections(location, GOAL));
-        return ASSyntax.createLiteral("locDirToGoal", getLocationLiteral(location), dirListTerm);
+    private List<Literal> getDirectionsToObj(Location location, int obj) {
+//        var dirListTerm = new ListTermImpl();
+        String objStr = obj == GOAL ? "goal" : "disp";
+
+        List<Literal> result = new ArrayList<>();
+        for (Term dirTerm : getNearestObjectDirections(location, obj))
+            if (dirTerm != NONE.getTerrainAtom())
+                result.add(ASSyntax.createRule(ASSyntax.createLiteral("dir", dirTerm, new Atom(objStr)), getLocationLiteral(location)));
+
+        return result;
     }
 
     @NotNull
@@ -518,17 +671,31 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         return dispenserDirs;
     }
 
-    private Literal getLocationPercepts(Location location) {
+    private List<Literal> getLocationPercepts(Location location) {
         Literal locationLit = getLocationLiteral(location);
-        List<Literal> locationPercepts = getPercepts(location);
+        List<Literal> locationPercepts = new ArrayList<>();
 
         // Get percepts for this location
         var percepts = getPercepts(location);
 
+
+        for (Literal percept : percepts)
+            if (SHOULD_USE_REL_PERCEPTS) {
+                if (percept.getTerm(2) == OBSTACLE.getTerrainAtom()) {
+                    locationPercepts.add(ASSyntax.createRule(ASSyntax.createLiteral("obs", percept.getTerm(0), percept.getTerm(1)), getLocationLiteral(location)));
+                }
+            } else {
+                if (percept.getTerm(1) == OBSTACLE.getTerrainAtom()) {
+                    locationPercepts.add(ASSyntax.createRule(ASSyntax.createLiteral("obs", percept.getTerm(0)), getLocationLiteral(location)));
+                }
+            }
+
+        return locationPercepts;
+
         // Add Percept beliefs
-        var listTerm = new ListTermImpl();
-        listTerm.addAll(percepts);
-        return ASSyntax.createLiteral("locPercept", locationLit, listTerm);
+//        var listTerm = new ListTermImpl();
+//        listTerm.addAll(percepts);
+//        return ASSyntax.createLiteral("locPercept", locationLit, listTerm);
     }
 
     private Literal getAdjacentBelief(Location location) {
@@ -579,7 +746,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
     }
 
     private Literal getLocationLiteral(Location location) {
-        return ASSyntax.createLiteral("location", ASSyntax.createNumber(location.x), ASSyntax.createNumber(location.y));
+        return ASSyntax.createLiteral("loc", ASSyntax.createNumber(location.x), ASSyntax.createNumber(location.y));
     }
 
     private Set<Location> getAdjacentLocations(Location current) {
@@ -616,7 +783,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         }
         LocalizationMap map = gson.fromJson(reader, LocalizationMap.class);
 
-        return new LocalizationMapModel(map);
+        return new LocalizationMapModel(map, mapType);
     }
 
     private LinkedList<Map<Location, Literal>> perms = new LinkedList<>();
@@ -690,10 +857,24 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
                 arrList.add(map.get(down));
             }
         } else {
-            arrList.add(getDirPercept(agentPos, 0, -1));
-            arrList.add(getDirPercept(agentPos, 0, 1));
-            arrList.add(getDirPercept(agentPos, -1, 0));
-            arrList.add(getDirPercept(agentPos, 1, 0));
+            if (config.useLargePercepts()) {
+
+                int sz = 3;
+                int count = 0;
+                for (int i = -sz; i <= sz; i++)
+                    for (int j = -sz; j <= sz; j++) {
+                        if (i == 0 && j == 0)
+                            continue;
+                        count++;
+                        arrList.add(getDirPercept(agentPos, i, j));
+                    }
+
+            } else {
+                arrList.add(getDirPercept(agentPos, 0, -1));
+                arrList.add(getDirPercept(agentPos, 0, 1));
+                arrList.add(getDirPercept(agentPos, -1, 0));
+                arrList.add(getDirPercept(agentPos, 1, 0));
+            }
         }
         return arrList;
     }
@@ -722,20 +903,22 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
         // Should we be using loc perceptions: percept(loc(0,-1)...) instead of percept(north,...)
         if (SHOULD_USE_REL_PERCEPTS) {
             // Old -> Use actual rel location as percept
-            locAtom = getLocationLiteral(new Location(x, y));
+//            locAtom = getLocationLiteral(new Location(x, y));
+//            locAtom = getLocationLiteral(new Location(x, y));
+            return ASSyntax.createLiteral("percept", new NumberTermImpl(x), new NumberTermImpl(y), a);
         } else {
             if (x == 0 && y == -1)
-                locAtom = ASSyntax.createAtom("north");
+                locAtom = ASSyntax.createAtom(NORTH);
             else if (x == 0 && y == 1)
-                locAtom = ASSyntax.createAtom("south");
+                locAtom = ASSyntax.createAtom(SOUTH);
             else if (x == 1 && y == 0)
-                locAtom = ASSyntax.createAtom("east");
+                locAtom = ASSyntax.createAtom(EAST);
             else // if (x == -1 && y == 0)
-                locAtom = ASSyntax.createAtom("west");
+                locAtom = ASSyntax.createAtom(WEST);
+            return ASSyntax.createLiteral("percept", locAtom, a);
         }
 
 
-        return ASSyntax.createLiteral("percept", locAtom, a);
     }
 
     @Override

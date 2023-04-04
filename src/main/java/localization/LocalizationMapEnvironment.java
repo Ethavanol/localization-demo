@@ -1,6 +1,6 @@
 package localization;
 
-import epistemic.DebugConfig;
+// import epistemic.DebugConfig;
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Literal;
 import jason.asSyntax.ObjectTermImpl;
@@ -22,11 +22,24 @@ public abstract class LocalizationMapEnvironment extends Environment implements 
     @Override
     public void init(String[] args) {
         this.mapEventQueue = new LinkedList<>();
-        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION);
+
+        // Dump all map type beliefs
+
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_5x5);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_10x10);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_20x20);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_30x30);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_40x40);
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_50x50);
+        // LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_100x100);
+
+
+
+        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION_5x5);
         localizationMapModel = localizationMapView.getModel();
 
         localizationMapModel.addMapListener(this);
-        if(DebugConfig.getInstance().showGUI())
+        // if(DebugConfig.getInstance().showGUI())
             localizationMapView.setVisible(true);
         super.init(args);
 

@@ -1,5 +1,5 @@
 import jason.JasonException;
-import jason.infra.centralised.RunCentralisedMAS;
+import jason.infra.local.RunLocalMAS;
 import jason.util.Config;
 
 import java.io.FileNotFoundException;
@@ -12,6 +12,6 @@ public class ProjectRunner {
         if(args.length == 0)
             args = new String[] {"epistemic-agents.mas2j"};
 
-        RunCentralisedMAS.main(args);
+        RunLocalMAS.main(args);
     }
 }

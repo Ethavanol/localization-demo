@@ -1,0 +1,52 @@
+{
+  "width": 5,
+  "height": 5,
+  "agentStart": {
+    "x": 3,
+    "y": 0
+  },
+  "markers": [
+    {
+      "location": {
+        "x": 2,
+        "y": 3
+      },
+      "type": 8
+    },
+    {
+      "location": {
+        "x": 4,
+        "y": 0
+      },
+      "type": 8
+    },
+    {
+      "location": {
+        "x": 2,
+        "y": 3
+      },
+      "type": 32
+    },
+    {
+      "location": {
+        "x": 4,
+        "y": 4
+      },
+      "type": 32
+    },
+    {
+      "location": {
+        "x": 1,
+        "y": 2
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 2,
+        "y": 2
+      },
+      "type": 4
+    }
+  ]
+}
