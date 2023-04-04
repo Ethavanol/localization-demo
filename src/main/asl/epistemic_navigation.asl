@@ -4,6 +4,12 @@
 /*  Model Generation */
 /*********************/
 
+// Same as single
+none :- .findall(not(loc(X, Y)), range(loc(X, Y)), List) & .big_and(Y, List) & Y.
+~loc(X1, Y1) :- range(loc(X1, Y1)) & loc(X2, Y2) & (X1 \== X2 | Y1 \== Y2).
+
+
+
 range(closest(dispenser(Type), Dir)) :- locDirToDispenser(_, Type, Dirs) & .member(Dir, Dirs).
 range(closest(goal, Dir)) :- locDirToGoal(_, Dirs) & .member(Dir, Dirs).
 
