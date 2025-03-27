@@ -14,29 +14,29 @@ This example introduces Jason agents that localize within a partially observable
 
 You need to have the following services running for the demo to work:
 
-- [epistemic-reasoner](https://github.com/Ethavanol/epistemic-reasoner) : follow the readMe file.
+- [epistemic-reasoner](https://github.com/Ethavanol/epistemic-reasoner)
 
-- [touist-service](https://github.com/Ethavanol/touist-service) : follow the readMe file.
+- [touist-service](https://github.com/Ethavanol/touist-service)
 
 Please refer to the README files and instructions in the respective repositories for how to set them up and get them running.
 
 ### Step 2: Install the epistemic-jason Dependency
 
-The epistemic-jason repository needs to be installed as a local Gradle dependency. Follow these steps:
+The [epistemic-jason](https://github.com/Ethavanol/epistemic-jason) repository needs to be installed as a local Gradle dependency. Follow these steps:
 
-    Clone the epistemic-jason repository.
+Clone the epistemic-jason repository.
 
-    In the README of the epistemic-jason repository, go to the "Publish epistemic-jason in MavenLocal" section.
+In the README of the epistemic-jason repository, go to the "Publish epistemic-jason in MavenLocal" section.
 
-    Follow the instructions there to publish it to your local Maven repository.
+Follow the instructions there to publish it to your local Maven repository.
 
 ### Step 3: Install the epistemic-agent Dependency
 
-Similarly, the epistemic-agent repository also needs to be installed as a local Gradle dependency.
+Similarly, the [epistemic-agent](https://github.com/Ethavanol/epistemic-agent) repository also needs to be installed as a local Gradle dependency.
 
-    Clone the epistemic-agent repository.
+Clone the epistemic-agent repository.
 
-    Refer to the instructions in the README for how to add it as a Gradle dependency.
+Refer to the instructions in the README for how to add it as a Gradle dependency.
 
 ### Step 4: Build and Run the Localization Project
 
