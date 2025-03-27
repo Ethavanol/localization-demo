@@ -14,9 +14,9 @@ This example introduces Jason agents that localize within a partially observable
 
 You need to have the following services running for the demo to work:
 
-    epistemic-reasoner
+- [epistemic-reasoner](https://github.com/Ethavanol/epistemic-reasoner) : follow the readMe file.
 
-    touistservice
+- [touist-service](https://github.com/Ethavanol/touist-service) : follow the readMe file.
 
 Please refer to the README files and instructions in the respective repositories for how to set them up and get them running.
 
