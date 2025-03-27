@@ -1,4 +1,6 @@
 # Localization Example
+This is a fork of [Michael Vezina Localization Demo](https://github.com/MikeVezina/localization-demo).  
+
 This example introduces Jason agents that localize within a partially observable environment.
 
 ## Limitations Imposed on Agent:
