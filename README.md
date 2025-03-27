@@ -64,7 +64,7 @@ If you wish to use the 5x5 map in the future and add agents, remember to uncomme
 
 ## Current Issue:
 
-The current problem we are facing is related to the fact that, in Jason, there are no error plans for the navigate(dispenser(red)...) plan. Specifically, this is due to our BeliefBase not receiving or updating with possible(...) facts.
+The current problem we are facing is related to the fact that, in Jason, there are no error plans for the navigate(dispenser(red)...) plan. Specifically, this is due to our BeliefBase not receiving or updating with possible(...) facts. What is going on is that the plan is selected, but the guard corresponding to the navigate plan, that is a possible(...) statement isn't satisfied
 
 This is potentially the last issue to resolve. For instance, by adding the following command between .print("I Moved."); and !updateGUIPossible; on line 188:
 
