@@ -42,13 +42,13 @@ Refer to the instructions in the README for how to add it as a Gradle dependency
 
 Once the dependencies are set up:
 
-Navigate to the localization project folder.
+- Clone this repo if not done.
+- Navigate to the localization project folder.
+- Run the following command to build the project:
 
-Run the following command to build the project:
+    ./gradlew build
 
-./gradlew build
-
-After the build process is complete, run the projectrunner file.
+- After the build process is complete, run the projectrunner file.
 
 ## Simulation Files:
 
