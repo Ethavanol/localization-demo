@@ -45,9 +45,9 @@ Once the dependencies are set up:
 - Clone this repo if not done.
 - Navigate to the localization project folder.
 - Run the following command to build the project:
----
-    ./gradlew build
----
+  
+        ./gradlew build
+  
 - After the build process is complete, run the projectrunner file.
 
 ## Simulation Files:
