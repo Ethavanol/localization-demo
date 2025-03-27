@@ -65,12 +65,12 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
 
         this.setAgPos(AGENT_IDX, map.getAgentStart());
 
-        var additionalAgents = DebugConfig.getInstance().getExtraAgents();
-
-        for (int i = 0; i < additionalAgents.size(); i++) {
-            Location loc = additionalAgents.get(i);
-            this.setAgPos(1 + i, loc);
-        }
+//        var additionalAgents = DebugConfig.getInstance().getExtraAgents();
+//
+//        for (int i = 0; i < additionalAgents.size(); i++) {
+//            Location loc = additionalAgents.get(i);
+//            this.setAgPos(1 + i, loc);
+//        }
 
         this.initialLocation = map.getAgentStart();
 
@@ -857,7 +857,7 @@ public class LocalizationMapModel extends GridWorldModel implements KeyListener 
                 arrList.add(map.get(down));
             }
         } else {
-            if (config.useLargePercepts()) {
+            if (config.useMaxPercepts()) {
 
                 int sz = 3;
                 int count = 0;

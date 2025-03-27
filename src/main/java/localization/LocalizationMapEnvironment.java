@@ -25,17 +25,18 @@ public abstract class LocalizationMapEnvironment extends Environment implements 
 
         // Dump all map type beliefs
 
+        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_4x3);
         LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_5x5);
-        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_10x10);
-        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_20x20);
-        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_30x30);
-        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_40x40);
-        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_50x50);
+//        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_10x10);
+//        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_20x20);
+//        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_30x30);
+//        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_40x40);
+//        LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_50x50);
         // LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_100x100);
 
 
 
-        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION_5x5);
+        localizationMapView = new LocalizationMapView(LocalizationMapView.MapType.LOCALIZATION_4x3);
         localizationMapModel = localizationMapView.getModel();
 
         localizationMapModel.addMapListener(this);

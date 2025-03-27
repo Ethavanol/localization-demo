@@ -47,6 +47,6 @@ public class VanillaEnvironment extends Environment {
     }
 
     public LocalizationMapModel getModel() {
-        return LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_50x50);
+        return LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_4x3);
     }
 }

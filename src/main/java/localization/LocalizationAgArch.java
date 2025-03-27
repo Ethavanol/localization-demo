@@ -2,6 +2,7 @@ package localization;
 
 import jason.architecture.AgArch;
 import jason.infra.centralised.CentralisedAgArch;
+import jason.infra.local.LocalAgArch;
 import navigation.NavigationMapEnvironment;
 
 /**
@@ -31,9 +32,9 @@ public class LocalizationAgArch extends AgArch {
 
         while(cur != null)
         {
-            if(cur instanceof CentralisedAgArch)
+            if(cur instanceof LocalAgArch)
             {
-                var env = ((CentralisedAgArch) cur).getEnvInfraTier().getUserEnvironment();
+                var env = ((LocalAgArch) cur).getEnvInfraTier().getUserEnvironment();
                 if(env instanceof NavigationMapEnvironment)
                 {
                     this.curEnv = (NavigationMapEnvironment) env;

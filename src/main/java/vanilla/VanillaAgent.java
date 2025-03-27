@@ -20,7 +20,7 @@ public class VanillaAgent extends Agent {
 
         var myArch = (LocalAgArch) arch;
         VanillaEnvironment localizationMapEnvironment = (VanillaEnvironment) myArch.getEnvInfraTier().getUserEnvironment();
-        var mapModel = LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_5x5);
+        var mapModel = LocalizationMapModel.loadFromFile(LocalizationMapView.MapType.LOCALIZATION_4x3);
         // Setup fake model for evaluation of updates/queries
         // System.out.println("FAKE MODEL CREATION IS ACTIVE");
         // System.out.println("FAKE MODEL CREATION IS ACTIVE");
