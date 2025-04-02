@@ -32,7 +32,7 @@ Follow the instructions there to publish it to your local Maven repository.
 
 ### Step 3: Install the epistemic-agent Dependency
 
-Similarly, the [epistemic-agent](https://github.com/Ethavanol/epistemic-agent) repository also needs to be installed as a local Gradle dependency.
+Similarly, the [epistemic-agent](https://github.com/Ethavanol/epistemic-agents) repository also needs to be installed as a local Gradle dependency.
 
 Clone the epistemic-agent repository.
 
