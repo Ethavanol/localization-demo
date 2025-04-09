@@ -50,26 +50,30 @@ Once the dependencies are set up:
   
 - After the build process is complete, run the projectrunner file.
 
+## Configuration:
+
+- Rename the ***reasoner-config.json.example*** in ***reasoner-config.json***.
+- Rename the ***reasonertype-config.json.example*** in ***reasonertype-config.json***.
+- You can manually change the reasonner type in the ***reasonnertype-config.json***. It can be either one of these two options :
+  - PAL
+  - DEL
+
 ## Simulation Files:
 
-Various .mas2j files are available to run different simulations. At the moment, only the navigation simulation has been fully tested and is nearly functional. 
+Various .mas2j files are available to run different simulations. At the moment, only two files have been tested and are lowkey running :
 
-The simulation for the "as" and "8 a" (named aces) has also been tested but does not work due to a missing API call.
+- The weather simulation works properly and have many comments to explain how it's working
+- The navigation simulation is in way to be fixed. 
 
-## Testing Map:
+The simulation for the "as" and "8" (named aces) has also been tested but does not work due to a missing API call.
 
-A 4x3 map has been created for faster testing. This map contains 12 - 2 = 10 possible cells, meaning it generates 2^10 = 1024 possible worlds. In contrast, the 5x5 map would generate 2^23 = 8,388,608 possible worlds, which is considerably slower to generate.
+## Recent addings (after the fork):
 
-If you wish to use the 5x5 map in the future and add agents, remember to uncomment lines 68 to 73 in the mapLocalizationMapModel file. These lines were commented out to make the 4x3 map functional. Specifically, the lines were commented because the agents added with those lines were placed outside the bounds of the 4x3 map.
-
-## Current Issue:
-
-The current problem we are facing is related to the fact that, in Jason, there are no error plans for the navigate(dispenser(red)...) plan. Specifically, this is due to our BeliefBase not receiving or updating with possible(...) facts. What is going on is that the plan is selected, but the guard corresponding to the navigate plan, that is a possible(...) statement isn't satisfied
-
-This is potentially the last issue to resolve. For instance, by adding the following command between .print("I Moved."); and !updateGUIPossible; on line 188:
-
-+possible(closest(dispenser(red), left));
-
-The agent will move left. The missing information is the possible(...) fact, which would validate the plan's condition.
-
-
+- Versions updates and gradle build fixed & updated.
+- Add of a reasonertype-config.json so we can directly change the reasoner type manually from the project.
+- Adding consideration for rules with constraints and avoiding evaluation of formulas when model firstly created.
+- Adding priority on plan guards: If three plans have respectively the following guards : "***X***", "***poss(X)***" and "***None***"
+- Then, no matter what is their order in the code, they will be choosen in this way :
+  - ***X***
+  - ***poss(X)***
+  - ***_None_***
