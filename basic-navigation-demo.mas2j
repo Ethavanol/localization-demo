@@ -1,0 +1,20 @@
+/*
+    mapc1
+    ---------------------------
+
+    Jason Application File
+
+    This file defines the initial state of the MAS
+
+    Jason 3.3.0
+    mars 11, 2025 - 16:19:01
+*/
+
+MAS mapc1 {
+
+    environment: basic_navigation_demo.MapcEnv(gui)
+   // executionControl: jason.control.ExecutionControlGUI
+    agents: basic_navigation;
+
+	aslSourcePath: "src/main/asl";
+}
