@@ -66,7 +66,7 @@ Because we want each agent to have HIS model with HIS possible worlds and modifi
 If we put the value to false, the perceptions of every agent will all update the same model.
 
 - Finally, in the MapType files (or everywhere you need to give a path), you will use :
-  - on Windows "\\\"
+  - on Windows "\\\\"
   - on Linux "/"
 
 If you are on Windows, the path will be "maps\\\localization.."
