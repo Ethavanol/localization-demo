@@ -10,6 +10,10 @@ This example introduces Jason agents that localize within a partially observable
 
 ## Setup and Execution Guide
 
+I recently modify versions and code so it would work under Linux.
+If you are on Windows and encounter problems to setup the project, please refer to commit of April 28 2025.
+Furthermore you can see the Versions section at the bottom of this page
+
 ### Step 1: Set Up the Required Services
 
 You need to have the following services running for the demo to work:
@@ -95,3 +99,15 @@ The simulation for the "as" and "8" (named aces) has also been tested but does n
 - Add of a reasonertype-config.json so we can directly change the reasoner type & the separateAgentWorlds value (for MultiAgent system) manually from the project.
 - Adding consideration for rules with constraints and avoiding evaluation of formulas when model firstly created.
 
+## Versions I used 
+- For localization demo :
+  - JDK 23
+  - Language Level 15
+
+- python 3.12.3
+- node 18.19.1
+
+For the dependencies see all versions in build.gradle and graddle.wrapper
+
+Btw the version of gradle in the gradle wrapper isn't related to your version of gradle. You don't even need to have gradle install locally to run a ./gradlew command or to use the gradle.wrapper files.
+You will need it if you want to generate a gradle.wrapper file.
