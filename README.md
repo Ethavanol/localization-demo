@@ -57,23 +57,41 @@ Once the dependencies are set up:
 - You can manually change the reasonner type in the ***reasonnertype-config.json***. It can be either one of these two options :
   - PAL
   - DEL
+- You can manually change the separateAgentWorlds value in the ***reasonnertype-config.json***. If you want  a MultiAgent System and each agent to be treated as autonomous with his own model containing his possibles worlds, then you will go for true. It can be either one of these two options :
+  - true
+  - false
+
+For example, in the case of a multi agent navigation (mapc example in the code) where each agent doesn't know where he spawned, we will use "DEL" and true.
+Because we want each agent to have HIS model with HIS possible worlds and modifiy those based on what he perceived.
+If we put the value to false, the perceptions of every agent will all update the same model.
+
+- Finally, in the MapType files (or everywhere you need to give a path), you will use :
+  - on Windows "\\\"
+  - on Linux "/"
+
+If you are on Windows, the path will be "maps\\\localization.."
+
+On Linux it will be "maps/localization.."
 
 ## Simulation Files:
 
 Various .mas2j files are available to run different simulations. At the moment, only two files have been tested and are lowkey running :
 
-- The weather simulation works properly and have many comments to explain how it's working
-- The navigation simulation is in way to be fixed. 
+- The weather simulation works properly and have many comments to explain how it's working. 
+  - Using PAL/DEL and false.
+- The basic-navigation-demo simulation is working. 
+  - Using DEL and false. 
+- The mapc demo is working. 
+  - Using DEL and true.
 
 The simulation for the "as" and "8" (named aces) has also been tested but does not work due to a missing API call.
 
 ## Recent addings (after the fork):
 
 - Versions updates and gradle build fixed & updated.
-- Add of a reasonertype-config.json so we can directly change the reasoner type manually from the project.
+- Modification of code.
+- Add of Multi-Agent handling by the reasonner.
+- Add of Touit-server.
+- Add of a reasonertype-config.json so we can directly change the reasoner type & the separateAgentWorlds value (for MultiAgent system) manually from the project.
 - Adding consideration for rules with constraints and avoiding evaluation of formulas when model firstly created.
-- Adding priority on plan guards: If three plans have respectively the following guards : "***X***", "***poss(X)***" and "***None***"
-- Then, no matter what is their order in the code, they will be choosen in this way :
-  - ***X***
-  - ***poss(X)***
-  - ***_None_***
+
