@@ -1,6 +1,7 @@
 {
   "width": 5,
   "height": 5,
+  "nbAgents": 2,
   "agentStart": {
     "x": 3,
     "y": 0

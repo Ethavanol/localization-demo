@@ -65,6 +65,8 @@ Once the dependencies are set up:
   - true
   - false
 
+Just keep it always true for the separateAgentWorlds variable, it will works for either MultiAgent or OneAgent Systems.
+
 For example, in the case of a multi agent navigation (mapc example in the code) where each agent doesn't know where he spawned, we will use "DEL" and true.
 Because we want each agent to have HIS model with HIS possible worlds and modifiy those based on what he perceived.
 If we put the value to false, the perceptions of every agent will all update the same model.
@@ -82,9 +84,9 @@ On Linux it will be "maps/localization.."
 Various .mas2j files are available to run different simulations. At the moment, only two files have been tested and are lowkey running :
 
 - The weather simulation works properly and have many comments to explain how it's working. 
-  - Using PAL/DEL and false.
+  - Using PAL/DEL and true.
 - The basic-navigation-demo simulation is working. 
-  - Using DEL and false. 
+  - Using DEL and true. 
 - The mapc demo is working. 
   - Using DEL and true.
 

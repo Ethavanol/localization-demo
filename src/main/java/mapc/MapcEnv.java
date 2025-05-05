@@ -26,13 +26,11 @@ public class MapcEnv extends Environment implements MapEventListener {
     public void init(String[] args){
         this.mapEventQueue = new HashMap<>();
 
-        MapcModel.loadFromFile(MapType.LOCALIZATION_5x5);
+        MapcModel.loadFromFile(MapType.LOCALIZATION_20x20);
 
         agentName = args[1];
 
-        model = new MapcModel(5,5,3);
-
-        view = new MapcView(MapType.LOCALIZATION_5x5);
+        view = new MapcView(MapType.LOCALIZATION_20x20);
         model = view.getModel();
 
         model.addMapListener(this);
@@ -135,10 +133,18 @@ public class MapcEnv extends Environment implements MapEventListener {
     }
 
     public int getAgNbFromName(String agName) {
-        return (Integer.parseInt(agName.substring(agentName.length()))) - 1;
+        if (model.getNbAgts() > 1){
+            return (Integer.parseInt(agName.substring(agentName.length()))) - 1;
+        } else {
+            return 0;
+        }
     }
 
     public String getAgNameFromId(int agId) {
-        return agentName + (agId+1);
+        if (model.getNbAgts() > 1){
+            return agentName + (agId+1);
+        } else {
+            return agentName;
+        }
     }
 }

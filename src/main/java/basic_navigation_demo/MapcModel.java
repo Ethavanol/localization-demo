@@ -8,6 +8,7 @@ import jason.environment.grid.Location;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 
 
@@ -35,14 +36,29 @@ public class MapcModel extends GridWorldModel {
         super(w, h, nbAgs);
         this.mapEventListeners = new ArrayList<>();
 
-        this.setAgPos(AGENT_IDX, 0, 0);
-
         addWall(1, 2, 3, 2);
+
+        randomAgentSpawn(w,h,nbAgs);
 
         add(GOAL, lGoal);
     }
 
 
+    public void randomAgentSpawn(int w, int h, int nbAgs) {
+        Random rand = new Random();
+        boolean notpositionned = true;
+        for(int i = 0; i < nbAgs; i++){
+            notpositionned = true;
+            while(notpositionned){
+                int x = rand.nextInt(w);
+                int y = rand.nextInt(h);
+                if(isFree(x,y)){
+                    this.setAgPos(i,0,4);
+                    notpositionned = false;
+                }
+            }
+        }
+    }
 
     @Override
     public void setAgPos(int ag, Location l) {
@@ -53,29 +69,62 @@ public class MapcModel extends GridWorldModel {
         super.setAgPos(ag, l);
     }
 
+    // Closed-World version
+//    void move(String direction) {
+//        Location r1 = getAgPos(0);
+//        switch(direction){
+//            case "up":
+//                r1.y--;
+//                break;
+//            case "down":
+//                r1.y++;
+//                break;
+//            case "left":
+//                r1.x--;
+//                break;
+//            case "right":
+//                r1.x++;
+//                break;
+//        }
+//        if(!this.inGrid(r1)){
+//            Atom moveDirection = ASSyntax.createAtom(direction);
+//            notifyListeners(getAgPos(0), TypeEvent.FAILED, moveDirection);
+//        }
+//        if(this.isFree(r1)){
+//            setAgPos(0, r1);
+//            notifyListeners(getAgPos(0), TypeEvent.MOVED, null);
+//        }
+//    }
+
+    // Open-World version
     void move(String direction) {
         Location r1 = getAgPos(0);
-        switch(direction){
+        int newX = r1.x;
+        int newY = r1.y;
+
+        switch (direction) {
             case "up":
-                r1.y--;
+                newY = (newY - 1 + GSize) % GSize;
                 break;
             case "down":
-                r1.y++;
+                newY = (newY + 1) % GSize;
                 break;
             case "left":
-                r1.x--;
+                newX = (newX - 1 + GSize) % GSize;
                 break;
             case "right":
-                r1.x++;
+                newX = (newX + 1) % GSize;
                 break;
         }
-        if(!this.inGrid(r1)){
+
+        Location newPos = new Location(newX, newY);
+
+        if (this.isFree(newPos)) {
+            setAgPos(0, newPos);
+            notifyListeners(newPos, TypeEvent.MOVED, null);
+        } else {
             Atom moveDirection = ASSyntax.createAtom(direction);
-            notifyListeners(getAgPos(0), TypeEvent.FAILED, moveDirection);
-        }
-        if(this.isFree(r1)){
-            setAgPos(0, r1);
-            notifyListeners(getAgPos(0), TypeEvent.MOVED, null);
+            notifyListeners(r1, TypeEvent.FAILED, moveDirection);
         }
     }
 
@@ -103,7 +152,7 @@ public class MapcModel extends GridWorldModel {
 
     private Atom getDirectionAtom(Location src, Location dst) {
 
-        var delta = delta(src, dst);
+        var delta = delta(src, dst, GSize, GSize);
 
         if (delta.x == 1)
             return ASSyntax.createAtom("right");
@@ -117,9 +166,22 @@ public class MapcModel extends GridWorldModel {
         throw new NullPointerException("Huh?");
     }
 
-    public Location delta(Location src, Location dst) {
-        Location delta = new Location(dst.x - src.x, dst.y - src.y);
-        if ((Math.abs(delta.x) != 1 && Math.abs(delta.y) != 1) || (delta.x == delta.y)) {
+    public Location delta(Location src, Location dst, int width, int height) {
+        int dx = dst.x - src.x;
+        int dy = dst.y - src.y;
+
+        // gestion du wrap horizontal
+        if (dx > 1) dx = dx - width;
+        if (dx < -1) dx = dx + width;
+
+        // gestion du wrap vertical
+        if (dy > 1) dy = dy - height;
+        if (dy < -1) dy = dy + height;
+
+        Location delta = new Location(dx, dy);
+
+        if ((Math.abs(delta.x) != 1 || delta.y != 0) &&
+                (Math.abs(delta.y) != 1 || delta.x != 0)) {
             System.out.println("Invalid Direction? " + delta);
             throw new NullPointerException();
         }
@@ -138,9 +200,31 @@ public class MapcModel extends GridWorldModel {
         return arrList;
     }
 
+    // Closed-World version
+//    private Literal getObsPercept(Location cur, int x, int y) {
+//        Location delta = new Location(cur.x + x, cur.y + y);
+//        Literal locAtom;
+//        if (x == 0 && y == -1)
+//            locAtom = ASSyntax.createAtom(NORTH);
+//        else if (x == 0 && y == 1)
+//            locAtom = ASSyntax.createAtom(SOUTH);
+//        else if (x == 1 && y == 0)
+//            locAtom = ASSyntax.createAtom(EAST);
+//        else // if (x == -1 && y == 0)
+//            locAtom = ASSyntax.createAtom(WEST);
+//        if(inGrid(delta) && !isFreeOfObstacle(delta)){
+//            return ASSyntax.createLiteral("obs", locAtom);
+//        }
+//        return ASSyntax.createLiteral(Literal.LNeg,"obs", locAtom);
+//    }
 
+    // Open-World version
     private Literal getObsPercept(Location cur, int x, int y) {
-        Location delta = new Location(cur.x + x, cur.y + y);
+        // Wrap-around si on sort de la grille
+        int wrappedX = (cur.x + x + GSize) % GSize;
+        int wrappedY = (cur.y + y + GSize) % GSize;
+        Location delta = new Location(wrappedX, wrappedY);
+
         Literal locAtom;
         if (x == 0 && y == -1)
             locAtom = ASSyntax.createAtom(NORTH);
@@ -150,10 +234,12 @@ public class MapcModel extends GridWorldModel {
             locAtom = ASSyntax.createAtom(EAST);
         else // if (x == -1 && y == 0)
             locAtom = ASSyntax.createAtom(WEST);
-        if(inGrid(delta) && !isFreeOfObstacle(delta)){
-            return ASSyntax.createLiteral("obs", locAtom);
+
+        // On n'a plus besoin de inGrid() car on reste toujours dans la grille
+        if (!isFreeOfObstacle(delta)) {
+            return ASSyntax.createLiteral("obs", locAtom); // obstacle présent
         }
-        return ASSyntax.createLiteral("~obs", locAtom);
+        return ASSyntax.createLiteral(Literal.LNeg, "obs", locAtom); // pas d'obstacle
     }
 
     public synchronized void signalInput(boolean val) {

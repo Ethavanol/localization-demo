@@ -1,0 +1,108 @@
+{
+  "width": 50,
+  "height": 50,
+  "agentStart": {
+    "x": 3,
+    "y": 0
+  },
+  "markers": [
+    {
+      "location": {
+        "x": 20,
+        "y": 30
+      },
+      "type": 8
+    },
+    {
+      "location": {
+        "x": 4,
+        "y": 0
+      },
+      "type": 8
+    },
+    {
+      "location": {
+        "x": 15,
+        "y": 3
+      },
+      "type": 32
+    },
+    {
+      "location": {
+        "x": 41,
+        "y": 46
+      },
+      "type": 32
+    },
+    {
+      "location": {
+        "x": 1,
+        "y": 2
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 2,
+        "y": 2
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 1,
+        "y": 2
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 2,
+        "y": 2
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 13,
+        "y": 21
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 14,
+        "y": 21
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 15,
+        "y": 22
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 16,
+        "y": 22
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 16,
+        "y": 23
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 16,
+        "y": 24
+      },
+      "type": 4
+    }
+  ]
+}

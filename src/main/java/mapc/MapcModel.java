@@ -39,8 +39,9 @@ public class MapcModel extends GridWorldModel {
     private static final boolean SHOULD_USE_REL_PERCEPTS = false;
     private static final boolean GENERATE_DIRS = true; // not needed when we generate larger maps
 
-    // the grid size
-    public static final int GSize = 5;
+    private int width;
+    private int height;
+    private int nbAgts;
 
     private int countUniqueObjects = 1;
 
@@ -52,6 +53,9 @@ public class MapcModel extends GridWorldModel {
 
     public MapcModel(int w, int h, int nbAgs) {
         super(w, h, nbAgs);
+        this.width = w;
+        this.height = h;
+        this.nbAgts = nbAgs;
         this.config = DebugConfig.getInstance();
         this.goalLocations = new ArrayList<>();
         this.mapEventListeners = new ArrayList<>();
@@ -59,7 +63,7 @@ public class MapcModel extends GridWorldModel {
     }
 
     public MapcModel(LocalizationMap map, MapType mapType) {
-        this(map.getWidth(), map.getHeight(), 1 + DebugConfig.getInstance().getExtraAgents().size());
+        this(map.getWidth(), map.getHeight(), map.getNbAgts());
 
         MapMarker prev = null;
         for (var marker : map.getMarkers()) {
@@ -70,7 +74,7 @@ public class MapcModel extends GridWorldModel {
             prev = marker;
         }
 
-        randomAgentSpawn(map.getWidth(),map.getHeight(),1 + DebugConfig.getInstance().getExtraAgents().size());
+        randomAgentSpawn(this.width,this.height,this.nbAgts);
 
         File newFile = new File("./generated_map_data_" + mapType.name() + ".asl");
         try {
@@ -104,6 +108,10 @@ public class MapcModel extends GridWorldModel {
         return new MapcModel(map, mapType);
     }
 
+    public int getNbAgts() {
+        return nbAgts;
+    }
+
     public void randomAgentSpawn(int w, int h, int nbAgs) {
         Random rand = new Random();
         boolean notpositionned = true;
@@ -113,7 +121,7 @@ public class MapcModel extends GridWorldModel {
                 int x = rand.nextInt(w);
                 int y = rand.nextInt(h);
                 if(isFree(x,y)){
-                    this.setAgPos(i,x,y);
+                    this.setAgPos(i,11,8);
                     notpositionned = false;
                 }
             }
@@ -485,40 +493,83 @@ public class MapcModel extends GridWorldModel {
         super.setAgPos(ag, l);
     }
 
+    // closed-world version
+//    synchronized public boolean move(Move dir, int ag) throws Exception {
+//        if (ag < 0) {
+//            logger.warning("** Trying to move unknown agent!");
+//            return false;
+//        }
+//        Location l = getAgPos(ag);
+//        if (l == null) {
+//            logger.warning("** We lost the location of agent " + (ag + 1) + "!"+this);
+//            return false;
+//        }
+//        Location n = null;
+//        switch (dir) {
+//            case UP:
+//                n =  new Location(l.x, l.y - 1);
+//                break;
+//            case DOWN:
+//                n =  new Location(l.x, l.y + 1);
+//                break;
+//            case RIGHT:
+//                n =  new Location(l.x + 1, l.y);
+//                break;
+//            case LEFT:
+//                n =  new Location(l.x - 1, l.y);
+//                break;
+//        }
+//
+//        if (n != null && isFreeOfObstacle(n)) {
+//            // if there is an agent there, move that agent
+////            if (!hasObject(AGENT, n) || move(dir,getAgAtPos(n))) {
+//                this.setAgPos(ag, n);
+//                notifyListeners(ag, TypeEvent.MOVED, null);
+//                return true;
+////            }
+//        }
+//        return false;
+//    }
+
+    // Open-World version
     synchronized public boolean move(Move dir, int ag) throws Exception {
         if (ag < 0) {
             logger.warning("** Trying to move unknown agent!");
             return false;
         }
+
         Location l = getAgPos(ag);
         if (l == null) {
             logger.warning("** We lost the location of agent " + (ag + 1) + "!"+this);
             return false;
         }
-        Location n = null;
+
+        int newX = l.x;
+        int newY = l.y;
+
         switch (dir) {
             case UP:
-                n =  new Location(l.x, l.y - 1);
+                newY = (l.y - 1 + height) % height;
                 break;
             case DOWN:
-                n =  new Location(l.x, l.y + 1);
+                newY = (l.y + 1) % height;
                 break;
             case RIGHT:
-                n =  new Location(l.x + 1, l.y);
+                newX = (l.x + 1) % width;
                 break;
             case LEFT:
-                n =  new Location(l.x - 1, l.y);
+                newX = (l.x - 1 + width) % width;
                 break;
         }
 
-        if (n != null && isFreeOfObstacle(n)) {
-            // if there is an agent there, move that agent
-//            if (!hasObject(AGENT, n) || move(dir,getAgAtPos(n))) {
-                this.setAgPos(ag, n);
-                notifyListeners(ag, TypeEvent.MOVED, null);
-                return true;
-//            }
+        Location n = new Location(newX, newY);
+
+        if (isFreeOfObstacle(n)) {
+            this.setAgPos(ag, n);
+            notifyListeners(ag, TypeEvent.MOVED, null);
+            return true;
         }
+
         return false;
     }
 
@@ -564,9 +615,34 @@ public class MapcModel extends GridWorldModel {
         throw new NullPointerException("Huh?");
     }
 
+    // Closed-World version
+//    public Location delta(Location src, Location dst) {
+//        Location delta = new Location(dst.x - src.x, dst.y - src.y);
+//        if ((Math.abs(delta.x) != 1 && Math.abs(delta.y) != 1) || (delta.x == delta.y)) {
+//            System.out.println("Invalid Direction? " + delta);
+//            throw new NullPointerException();
+//        }
+//
+//        return delta;
+//    }
+
+    // Open-world version
     public Location delta(Location src, Location dst) {
-        Location delta = new Location(dst.x - src.x, dst.y - src.y);
-        if ((Math.abs(delta.x) != 1 && Math.abs(delta.y) != 1) || (delta.x == delta.y)) {
+        int dx = dst.x - src.x;
+        int dy = dst.y - src.y;
+
+        // gestion du wrap horizontal
+        if (dx > 1) dx = dx - width;
+        if (dx < -1) dx = dx + width;
+
+        // gestion du wrap vertical
+        if (dy > 1) dy = dy - height;
+        if (dy < -1) dy = dy + height;
+
+        Location delta = new Location(dx, dy);
+
+        if ((Math.abs(delta.x) != 1 || delta.y != 0) &&
+                (Math.abs(delta.y) != 1 || delta.x != 0)) {
             System.out.println("Invalid Direction? " + delta);
             throw new NullPointerException();
         }
@@ -586,9 +662,31 @@ public class MapcModel extends GridWorldModel {
         return arrList;
     }
 
+    // Closed-world version
+//    private Literal getObsPercept(Location cur, int x, int y) {
+//        Location delta = new Location(cur.x + x, cur.y + y);
+//        Literal locAtom;
+//        if (x == 0 && y == -1)
+//            locAtom = ASSyntax.createAtom(NORTH);
+//        else if (x == 0 && y == 1)
+//            locAtom = ASSyntax.createAtom(SOUTH);
+//        else if (x == 1 && y == 0)
+//            locAtom = ASSyntax.createAtom(EAST);
+//        else // if (x == -1 && y == 0)
+//            locAtom = ASSyntax.createAtom(WEST);
+//        if(inGrid(delta) && !isFreeOfObstacle(delta)){
+//            return ASSyntax.createLiteral("obs", locAtom);
+//        }
+//        return ASSyntax.createLiteral("~obs", locAtom);
+//    }
 
+    // Open-world version
     private Literal getObsPercept(Location cur, int x, int y) {
-        Location delta = new Location(cur.x + x, cur.y + y);
+        // Wrap-around si on sort de la grille
+        int wrappedX = (cur.x + x + width) % width;
+        int wrappedY = (cur.y + y + height) % height;
+        Location delta = new Location(wrappedX, wrappedY);
+
         Literal locAtom;
         if (x == 0 && y == -1)
             locAtom = ASSyntax.createAtom(NORTH);
@@ -598,10 +696,11 @@ public class MapcModel extends GridWorldModel {
             locAtom = ASSyntax.createAtom(EAST);
         else // if (x == -1 && y == 0)
             locAtom = ASSyntax.createAtom(WEST);
-        if(inGrid(delta) && !isFreeOfObstacle(delta)){
+
+        if (!isFreeOfObstacle(delta)) {
             return ASSyntax.createLiteral("obs", locAtom);
         }
-        return ASSyntax.createLiteral("~obs", locAtom);
+        return ASSyntax.createLiteral(Literal.LNeg, "obs", locAtom);
     }
 
     public boolean isAdjacent(Location firstLoc, Location secondLoc) {
