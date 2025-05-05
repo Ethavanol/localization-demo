@@ -53,7 +53,7 @@ public class MapcModel extends GridWorldModel {
                 int x = rand.nextInt(w);
                 int y = rand.nextInt(h);
                 if(isFree(x,y)){
-                    this.setAgPos(i,0,4);
+                    this.setAgPos(i,x,y);
                     notpositionned = false;
                 }
             }
