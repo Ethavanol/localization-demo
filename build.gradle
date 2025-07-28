@@ -9,10 +9,9 @@ idea {
         downloadSources = true
     }
 }
-group 'com.mvezina'
-version '1.0-SNAPSHOT'
 
-sourceCompatibility = 15
+
+sourceCompatibility = 21
 
 repositories {
     mavenCentral()
@@ -33,9 +32,8 @@ test {
 }
 
 dependencies {
-    implementation group: 'org.jason' , name: 'jason' , version: '3.1-epistemic',
+    implementation group: 'org.jason' , name: 'jason' , version: '3.3-epistemic',
             changing: true, transitive: true
-    implementation group: 'com.mvezina', name:'epistemic-agents', version:  '1.0-SNAPSHOT', changing: true
     implementation 'com.google.code.gson:gson:2.12.0'
     implementation 'org.jetbrains:annotations:19.0.0'
 

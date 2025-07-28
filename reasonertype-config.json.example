@@ -1,4 +1,4 @@
 {
-  "reasonerType": "PAL",
+  "reasonerType": "DEL",
   "separateAgentWorlds" : true
 }

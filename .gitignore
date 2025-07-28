@@ -15,5 +15,3 @@ run-server.sh
 e_r_r_o_r.txt
 **/**/gradle/
 /generated_map_data.asl
-/reasoner-config.json
-/reasonertype-config.json

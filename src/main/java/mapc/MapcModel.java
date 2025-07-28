@@ -1,24 +1,29 @@
 package mapc;
 
+import MAP.LocalizationMap;
+import MAP.MapMarker;
+import MAP.MapType;
+import MAP.Terrain;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import epistemic.DebugConfig;
 import jason.asSemantics.Unifier;
 import jason.asSyntax.*;
 import jason.asSyntax.parser.ParseException;
 import jason.environment.grid.GridWorldModel;
 import jason.environment.grid.Location;
 import org.jetbrains.annotations.NotNull;
+import simple_navigation.Direction;
 
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static mapc.Terrain.NONE;
+import static MAP.Terrain.NONE;
 
 
 public class MapcModel extends GridWorldModel {
 
+    public static final int POSSIBLE = (int) Math.pow(2, 4);
     public static final int GOAL = (int) Math.pow(2, 3);
     private static final String NORTH = "up";
     private static final String SOUTH = "down";
@@ -26,15 +31,17 @@ public class MapcModel extends GridWorldModel {
     private static final String WEST = "left";
     public static final int RED_DISP = (int) Math.pow(2, 5);
     private boolean inputEnabled = true;
+    private static final boolean OPEN_WORLD = true;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private List<Location> lastPositions;
     private List<MapEventListener> mapEventListeners;
     private boolean usedNone = false;
 
+    private List<Location> possibleLocations = new ArrayList<>();
+
     private List<Location> goalLocations;
 
-    private final DebugConfig config;
 
     private static final boolean SHOULD_USE_REL_PERCEPTS = false;
     private static final boolean GENERATE_DIRS = true; // not needed when we generate larger maps
@@ -56,7 +63,6 @@ public class MapcModel extends GridWorldModel {
         this.width = w;
         this.height = h;
         this.nbAgts = nbAgs;
-        this.config = DebugConfig.getInstance();
         this.goalLocations = new ArrayList<>();
         this.mapEventListeners = new ArrayList<>();
         this.lastPositions = new ArrayList<>(Arrays.asList(null, null, null));
@@ -65,16 +71,15 @@ public class MapcModel extends GridWorldModel {
     public MapcModel(LocalizationMap map, MapType mapType) {
         this(map.getWidth(), map.getHeight(), map.getNbAgts());
 
-        MapMarker prev = null;
         for (var marker : map.getMarkers()) {
             if (marker.getType() == GOAL)
                 goalLocations.add(marker.getLocation());
 
             this.add(marker.getType(), marker.getLocation().x, marker.getLocation().y);
-            prev = marker;
         }
 
-        randomAgentSpawn(this.width,this.height,this.nbAgts);
+        this.setAgPos(0, map.getAgentStart());
+//        randomAgentSpawn(this.width,this.height,this.nbAgts);
 
         File newFile = new File("./generated_map_data_" + mapType.name() + ".asl");
         try {
@@ -121,7 +126,7 @@ public class MapcModel extends GridWorldModel {
                 int x = rand.nextInt(w);
                 int y = rand.nextInt(h);
                 if(isFree(x,y)){
-                    this.setAgPos(i,11,8);
+                    this.setAgPos(i,2,1);
                     notpositionned = false;
                 }
             }
@@ -162,10 +167,6 @@ public class MapcModel extends GridWorldModel {
                 var dirListTerm = getDirectionsToObj(location, GOAL);
                 if (!dirListTerm.isEmpty())
                     dirGoalBeliefs.put(location, dirListTerm);
-
-                dirListTerm = getDirectionsToObj(location, RED_DISP);
-                if (!dirListTerm.isEmpty())
-                    dirDispBeliefs.put(location, dirListTerm);
             }
         }
 
@@ -311,24 +312,10 @@ public class MapcModel extends GridWorldModel {
         // Get directional percepts
         var arrList = new ArrayList<Literal>();
 
-        if (config.useMaxPercepts()) {
-
-            int sz = 3;
-            int count = 0;
-            for (int i = -sz; i <= sz; i++)
-                for (int j = -sz; j <= sz; j++) {
-                    if (i == 0 && j == 0)
-                        continue;
-                    count++;
-                    arrList.add(getDirPercept(agentPos, i, j));
-                }
-
-        } else {
-            arrList.add(getDirPercept(agentPos, 0, -1));
-            arrList.add(getDirPercept(agentPos, 0, 1));
-            arrList.add(getDirPercept(agentPos, -1, 0));
-            arrList.add(getDirPercept(agentPos, 1, 0));
-        }
+        arrList.add(getDirPercept(agentPos, 0, -1));
+        arrList.add(getDirPercept(agentPos, 0, 1));
+        arrList.add(getDirPercept(agentPos, -1, 0));
+        arrList.add(getDirPercept(agentPos, 1, 0));
 
         return arrList;
     }
@@ -337,17 +324,6 @@ public class MapcModel extends GridWorldModel {
         Location delta = new Location(cur.x + x, cur.y + y);
         Terrain t = getPerceptTerrain(delta.x, delta.y);
         Atom a = t.getTerrainAtom();
-        if (config.useUniquePercepts()) {
-            countUniqueObjects++;
-            return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), ASSyntax.createAtom(String.valueOf(Math.random())));
-        }
-
-        if (config.useMaxPercepts()) {
-            if (!usedNone)
-                return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), NONE.getTerrainAtom());
-            else
-                return ASSyntax.createLiteral("percept", getLocationLiteral(new Location(x, y)), Terrain.OBSTACLE.getTerrainAtom());
-        }
 
         Literal locAtom;
 
@@ -396,10 +372,15 @@ public class MapcModel extends GridWorldModel {
             return goalDirections;
         }
 
-        Location west = new Location(curLocation.x - 1, curLocation.y);
-        Location east = new Location(curLocation.x + 1, curLocation.y);
-        Location north = new Location(curLocation.x, curLocation.y - 1);
-        Location south = new Location(curLocation.x, curLocation.y + 1);
+        int xWest = (curLocation.x - 1 + width) % width;
+        int xEast = (curLocation.x + 1) % width;
+        int yNorth = (curLocation.y - 1 + height) % height;
+        int ySouth = (curLocation.y + 1) % height;
+
+        Location west = new Location(xWest, curLocation.y);
+        Location east = new Location(xEast, curLocation.y);
+        Location north = new Location(curLocation.x, yNorth);
+        Location south = new Location(curLocation.x, ySouth);
 
         int westPath = findPathToClosestObject(west, obj);
         int eastPath = findPathToClosestObject(east, obj);
@@ -469,10 +450,10 @@ public class MapcModel extends GridWorldModel {
 
         Set<Location> adjSet = new HashSet<>();
 
-        Location left = new Location(x - 1, y);
-        Location right = new Location(x + 1, y);
-        Location up = new Location(x, y - 1);
-        Location down = new Location(x, y + 1);
+        Location left = new Location((x - 1 + width) % width, y);
+        Location right = new Location((x + 1) % width, y);
+        Location up = new Location(x, (y - 1 + height) % height);
+        Location down = new Location(x, (y + 1) % height);
         if (isAdjacent(current, left))
             adjSet.add(left);
         if (isAdjacent(current, right))
@@ -575,13 +556,11 @@ public class MapcModel extends GridWorldModel {
 
     public void addMapListener(MapEventListener listener) {
         this.mapEventListeners.add(listener);
-        for(int i=0; i<3; i++){
-            this.notifyListeners(i, TypeEvent.MOVED, null);
-        }
+        this.notifyListeners(0, TypeEvent.MOVED, null);
     }
 
 
-    private synchronized void notifyListeners(Integer agentId, TypeEvent typeEvent, Atom moveDirection) {
+    private synchronized void notifyListeners(Integer agentId, TypeEvent typeEvent, Direction moveDirection) {
         Location agentLoc = getAgPos(agentId);
 
         if (moveDirection == null) {
@@ -592,25 +571,25 @@ public class MapcModel extends GridWorldModel {
             listener.agentMoved(new MapEvent(this, agentLoc, moveDirection, typeEvent, agentId), agentId);
     }
 
-    public Atom getLastLocation(Integer agentId) {
+    public Direction getLastLocation(Integer agentId) {
         if (lastPositions.get(agentId) == null)
             return null;
 
         return getDirectionAtom(lastPositions.get(agentId), getAgPos(agentId));
     }
 
-    private Atom getDirectionAtom(Location src, Location dst) {
+    private Direction getDirectionAtom(Location src, Location dst) {
 
         var delta = delta(src, dst);
 
         if (delta.x == 1)
-            return ASSyntax.createAtom("right");
+            return Direction.RIGHT;
         if (delta.x == -1)
-            return ASSyntax.createAtom("left");
+            return Direction.LEFT;
         if (delta.y == -1)
-            return ASSyntax.createAtom("up");
+            return Direction.UP;
         if (delta.y == 1)
-            return ASSyntax.createAtom("down");
+            return Direction.DOWN;
 
         throw new NullPointerException("Huh?");
     }
@@ -707,11 +686,36 @@ public class MapcModel extends GridWorldModel {
         if (!isFreeOfObstacle(firstLoc) || !isFreeOfObstacle(secondLoc))
             return false;
 
-        return firstLoc.distance(secondLoc) == 1;
+        return true;
     }
 
     public synchronized void signalInput(boolean val) {
         this.inputEnabled = val;
     }
 
+    // if you wanna see the possible cases :
+
+    private synchronized void addPossible() {
+        for (var location : possibleLocations) {
+            // For relative agent positions
+            this.add(POSSIBLE, location);
+        }
+
+        this.view.getCanvas().invalidate();
+    }
+
+    private synchronized void clearPossible() {
+        for (var location : possibleLocations)
+            this.remove(POSSIBLE, location);
+
+        this.possibleLocations.clear();
+
+    }
+
+    public synchronized void setPossible(List<Location> newPossible) {
+        this.clearPossible();
+        // Transform for true localization where we don't have absolute positions
+        this.possibleLocations.addAll(newPossible);
+        this.addPossible();
+    }
 }

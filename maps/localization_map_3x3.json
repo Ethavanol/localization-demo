@@ -1,30 +1,23 @@
 {
-  "width": 5,
-  "height": 5,
+  "width": 3,
+  "height": 3,
   "nbAgts": 1,
   "agentStart": {
-    "x": 3,
-    "y": 1
+    "x": 0,
+    "y": 0
   },
   "markers": [
     {
       "location": {
-        "x": 4,
-        "y": 0
+        "x": 1,
+        "y": 2
       },
       "type": 8
     },
     {
       "location": {
         "x": 1,
-        "y": 2
-      },
-      "type": 4
-    },
-    {
-      "location": {
-        "x": 2,
-        "y": 2
+        "y": 1
       },
       "type": 4
     }

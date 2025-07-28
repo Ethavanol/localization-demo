@@ -1,8 +1,13 @@
 package mapc;
 
+import MAP.MapType;
 import jason.environment.grid.GridWorldView;
+import jason.environment.grid.Location;
+import simple_navigation.Direction;
+import simple_navigation.NavModel;
 
 import java.awt.*;
+import java.util.Set;
 
 public class MapcView extends GridWorldView {
 
@@ -27,23 +32,24 @@ public class MapcView extends GridWorldView {
 
     @Override
     public void draw(Graphics g, int x, int y, int object) {
-        g.setColor(Color.yellow);
-        g.fillRect(x * this.cellSizeW + 1, y * this.cellSizeH + 1, this.cellSizeW - 2, this.cellSizeH - 2);
-        g.setColor(Color.lightGray);
-        if (object == MapcModel.GOAL){
+        if (object == NavModel.GOAL){
+            g.setColor(Color.yellow);
+            g.fillRect(x * this.cellSizeW + 1, y * this.cellSizeH + 1, this.cellSizeW - 2, this.cellSizeH - 2);
             g.setColor(Color.red);
             drawString(g, x, y, defaultFont, "Goal");
+        }
+        Graphics2D g2 = (Graphics2D) g;
+        if (object == MapcModel.POSSIBLE){
+            g2.setColor(Color.RED);
+            g2.setStroke(new BasicStroke(5));
+            g2.drawRect(x * cellSizeW + 10, y * cellSizeH + 10, cellSizeW - 20, cellSizeH - 20);
+            g2.setStroke(new BasicStroke(1));
         }
     }
 
     @Override
     public void drawAgent(Graphics g, int x, int y, Color c, int id) {
-        if (id == 0)
-            super.drawAgent(g, x, y, c, id);
-        if (id == 1)
-            super.drawAgent(g, x, y, Color.red, id);
-        if (id == 2)
-            super.drawAgent(g, x, y, Color.green, id);
+        super.drawAgent(g, x, y, c, id);
     }
 
 

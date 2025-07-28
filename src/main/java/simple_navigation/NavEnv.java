@@ -1,26 +1,27 @@
-package mapc;
-
+package simple_navigation;
 
 import MAP.MapType;
+import epistemic_jason.asSemantics.modelListener.World;
+import epistemic_jason.formula.PropFormula;
 import jason.asSyntax.Literal;
 import jason.asSyntax.Structure;
 import jason.environment.Environment;
 import jason.environment.grid.Location;
+import jason.util.Pair;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class MapcEnv extends Environment implements MapEventListener {
+public class NavEnv extends Environment implements MapEventListener {
 
     private HashMap<Integer, Queue<MapEvent>> mapEventQueue;
 
     public static final Literal ag = Literal.parseLiteral("at(goal)");
 
-    static Logger logger = Logger.getLogger(MapcEnv.class.getName());
+    static Logger logger = Logger.getLogger(NavEnv.class.getName());
 
-    private MapcModel model;
-    private MapcView view;
+    private NavModel model;
 
     String agentName;
 
@@ -28,19 +29,20 @@ public class MapcEnv extends Environment implements MapEventListener {
     public void init(String[] args){
         this.mapEventQueue = new HashMap<>();
 
-        MapcModel.loadFromFile(MapType.LOCALIZATION_5x5);
+        agentName = args[0];
 
-        agentName = args[1];
+        model = NavModel.loadFromFile(MapType.LOCALIZATION_5x5);
 
-        view = new MapcView(MapType.LOCALIZATION_5x5);
-        model = view.getModel();
+        if(args.length > 1 && args[1].equals("gui")){
+            NavView navView = new NavView(model);
+            model.setView(navView);
+        }
 
         model.addMapListener(this);
-        view.setVisible(true);
         super.init(args);
     }
 
-    public MapcModel getModel() {
+    public NavModel getModel() {
         return model;
     }
 
@@ -54,7 +56,7 @@ public class MapcEnv extends Environment implements MapEventListener {
         this.mapEventQueue
                 .computeIfAbsent(agentId, k -> new LinkedList<>()) // crée une queue si elle n'existe pas
                 .add(event);
-        // Disable input until agent is ready.
+
         model.signalInput(false);
 
         // Inform that agents need new percepts (otherwise there is a delay!)
@@ -81,14 +83,12 @@ public class MapcEnv extends Environment implements MapEventListener {
             return null;
 
         Location agentPos = model.getAgPos(getAgNbFromName(agName));
-
         for (Location goal : model.getGoalLocations()) {
             if (agentPos.equals(goal)) {
                 curPercepts.add(ag);
                 break;
             }
         }
-
         // Get next event to process
         MapEvent nextEvent = this.mapEventQueue.get(getAgNbFromName(agName)).poll();
         if(nextEvent == null){
@@ -114,16 +114,16 @@ public class MapcEnv extends Environment implements MapEventListener {
                 String dir = action.getTerm(0).toString();
                 switch (dir){
                     case "up":
-                        result = model.move(MapcModel.Move.UP, agId);
+                        result = model.move(Direction.UP, agId);
                         break;
                     case "down":
-                        result = model.move(MapcModel.Move.DOWN, agId);
+                        result = model.move(Direction.DOWN, agId);
                         break;
                     case "left":
-                        result = model.move(MapcModel.Move.LEFT, agId);
+                        result = model.move(Direction.LEFT, agId);
                         break;
                     case "right":
-                        result = model.move(MapcModel.Move.RIGHT, agId);
+                        result = model.move(Direction.RIGHT, agId);
                         break;
                 }
             }

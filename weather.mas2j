@@ -12,11 +12,10 @@
 
 MAS rain {
 
-    environment: weather.WeatherEnv
-
 	//executionControl: jason.control.ExecutionControlGUI
 
-    agents: weather;
+    agents: weather
+    agentClass epistemic_jason.asSemantics.AgentEpistemic;
 
-	aslSourcePath: "src/main/asl";
+	aslSourcePath: "src/main/agt";
 }

@@ -1,10 +1,9 @@
-package mapc;
+package simple_navigation;
 
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Atom;
 import jason.asSyntax.Literal;
 import jason.environment.grid.Location;
-import simple_navigation.Direction;
 
 import java.util.EventObject;
 import java.util.List;
@@ -12,13 +11,13 @@ import java.util.List;
 
 public class MapEvent extends EventObject {
 
-    private final MapcModel source;
+    private final NavModel source;
     private final Location newLocation;
     private final Direction moveDirection;
     private final TypeEvent typeEvent;
     private final Integer agentId;
 
-    public MapEvent(MapcModel source, Location newLocation, Direction direction, TypeEvent typeEvent, int ag) {
+    public MapEvent(NavModel source, Location newLocation, Direction direction, TypeEvent typeEvent, int ag) {
         super(source);
         this.source = source;
         this.newLocation = newLocation;
@@ -59,7 +58,7 @@ public class MapEvent extends EventObject {
     }
 
     @Override
-    public MapcModel getSource() {
+    public NavModel getSource() {
         return source;
     }
 }

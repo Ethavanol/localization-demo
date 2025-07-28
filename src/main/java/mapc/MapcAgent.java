@@ -1,9 +1,25 @@
 package mapc;
 
-import jason.asSemantics.Agent;
+import epistemic_jason.asSemantics.AgentEpistemic;
+import epistemic_jason.asSemantics.modelListener.ModelResponse;
+import epistemic_jason.asSemantics.modelListener.World;
+import epistemic_jason.formula.PropFormula;
+import jason.asSemantics.Event;
+import jason.asSemantics.Option;
+import jason.asSyntax.ASSyntax;
+import jason.asSyntax.Pred;
+import jason.asSyntax.Trigger;
+import jason.asSyntax.parser.ParseException;
+import jason.environment.grid.Location;
 import jason.infra.local.LocalAgArch;
+import jason.util.Pair;
+import simple_navigation.Direction;
 
-public class MapcAgent extends Agent {
+import java.util.*;
+
+public class MapcAgent extends AgentEpistemic {
+
+    MapcEnv mapcEnv;
 
     @Override
     public void initAg() {
@@ -16,9 +32,54 @@ public class MapcAgent extends Agent {
             arch = arch.getNextAgArch();
 
         var myArch = (LocalAgArch) arch;
-        MapcEnv mapcEnvironment = (MapcEnv) myArch.getEnvInfraTier().getUserEnvironment();
+        mapcEnv = (MapcEnv) myArch.getEnvInfraTier().getUserEnvironment();
 
-        for (var bel : mapcEnvironment.getModel().dumpMapBeliefsToBB())
+        for (var bel : mapcEnv.getModel().dumpMapBeliefsToBB())
             this.addInitialBel(bel);
+    }
+
+    @Override
+    public void eventModelApplied(Event event){
+        // we update the directions of the worlds in the model only if the agent moved and his possibles locations changed
+        if(event.getTrigger().getOperator().equals(Trigger.TEOperator.add) && event.getTrigger().getLiteral().toString().startsWith("on(")){
+            try {
+                ModelResponse model = this.getWorldsResponseModel();
+                updateView(model.getWorlds());
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void updateView(List<World> worlds) throws ParseException {
+        List<Location> possibleLocations = new ArrayList<>();
+        for (World w : worlds) {
+            // we get the directions generated before
+            Map<String, Boolean> propositions = w.getPropositions();
+            String locValue = null;
+            List<PropFormula> listNewProps = new ArrayList<>();
+            for (String prop : propositions.keySet()) {
+                if (prop.startsWith("loc(")) {
+                    locValue = prop;
+                }
+            }
+            possibleLocations.add(stringToLocation(locValue));
+        }
+        mapcEnv.getModel().setPossible(possibleLocations);
+    }
+
+    public Location stringToLocation(String location){
+        String[] coordinates = location.substring(location.indexOf("(")+1, location.indexOf(")")).split(",");
+        return new Location(Integer.parseInt(coordinates[0]), Integer.parseInt(coordinates[1]));
+    }
+
+
+    @Override
+    public Option selectOption(List<Option> options) {
+        if (options != null && !options.isEmpty()) {
+            return options.remove(0);
+        } else {
+            return null;
+        }
     }
 }
