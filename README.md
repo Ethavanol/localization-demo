@@ -45,10 +45,11 @@ Once the dependencies are set up:
 - You can manually change the reasonner type in the ***reasonnertype-config.json***. It can be either one of these two options :
     - PAL
     - DEL
-- You can manually change the separateAgentWorlds value in the ***reasonnertype-config.json***. If you want  a MultiAgent System and each agent to be treated as autonomous with his own model containing his possibles worlds, then you will go for true. Anyway, even if you have a mono-agent system, it will still works with the value to true. Recommandations is to keep it true no matter what. Basically, with a true value, this will just associates a model to the agent name in the reasonner. Setting it to false can allow you to see the old version of how it was done. It can be either one of these two options :
+- You can manually change the separateAgentWorlds value in the ***reasonnertype-config.json***. It can be either one of these two options :
     - true
     - false
 
+If you want  a MultiAgent System and each agent to be treated as autonomous with his own model containing his possibles worlds, then you will go for true. Anyway, even if you have a mono-agent system, it will still works with the value to true. Recommandations is to keep it true no matter what. Basically, with a true value, this will just associates a model to the agent name in the reasonner. Setting it to false can allow you to see the old version of how it was done.
 Just keep it always true for the separateAgentWorlds variable, it will works for either MultiAgent or MonoAgent Systems.
 
 For example, in the case of a multi agent navigation (mapc example in the code) where each agent doesn't know where he spawned, we will use "DEL" and true.
