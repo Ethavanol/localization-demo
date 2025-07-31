@@ -3,10 +3,10 @@ This is a fork of [Michael Vezina Localization Demo](https://github.com/MikeVezi
 
 This example introduces Jason agents using epistemic extension that localize within a partially observable environment.
 
-## Limitations Imposed on Agent:
+## Explanations on examples:
 
-- No access to map data. The agent must localize using data it has already perceived.
-- Agents do not know their location on the map (only their immediate north/south/east/west cell perceptions).
+- Reading Michael Vezina’s thesis, "Qualitative Uncertainty Reasoning in AgentSpeak", is highly valuable and can be of great help. It is through this work that he developed the epistemic extension of Jason. The thesis includes numerous examples and explanations related to the implementation of the code, as well as the underlying principles on which the extension is based.
+- The document "explanations.pdf" describes how the extension works and presents the case studies related to the examples included in this demo.
 
 ## Setup and Execution Guide
 
@@ -52,7 +52,7 @@ Once the dependencies are set up:
 If you want  a MultiAgent System and each agent to be treated as autonomous with his own model containing his possibles worlds, then you will go for true. Anyway, even if you have a mono-agent system, it will still works with the value to true. Recommandations is to keep it true no matter what. Basically, with a true value, this will just associates a model to the agent name in the reasonner. Setting it to false can allow you to see the old version of how it was done.
 Just keep it always true for the separateAgentWorlds variable, it will works for either MultiAgent or MonoAgent Systems.
 
-For example, in the case of a multi agent navigation (mapc example in the code) where each agent doesn't know where he spawned, we will use "DEL" and true.
+For example, in the case of a multi agent navigation (navigation example in the code) where each agent doesn't know where he spawned, we will use "DEL" and true.
 Because we want each agent to have HIS model with HIS possible worlds and modifiy those based on what he perceived.
 If we put the value to false, the perceptions of every agent will all update the same model.
 

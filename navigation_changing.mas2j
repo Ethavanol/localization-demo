@@ -1,0 +1,18 @@
+
+MAS navigation_changing {
+
+    infrastructure: Centralised
+
+    environment: navigation_changing.NavChangingEnv("navigation", "gui")
+
+	//executionControl: jason.control.ExecutionControlGUI
+
+	agents:
+	   nav_changing_closedworld
+	   agentClass navigation_changing.NavChangingAgent
+       agentArchClass navigation_changing.NavChangingAgArch;
+
+    aslSourcePath: "src/main/agt";
+
+
+}

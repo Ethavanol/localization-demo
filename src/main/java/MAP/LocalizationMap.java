@@ -2,13 +2,14 @@ package MAP;
 
 import jason.environment.grid.Location;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LocalizationMap {
     private Integer width;
     private Integer height;
     private Integer nbAgts;
-    private Location agentStart;
+    private List<Location> agentStart;
     private List<MapMarker> markers;
 
     public Integer getWidth() {
@@ -23,9 +24,7 @@ public class LocalizationMap {
         return nbAgts;
     }
 
-    public Location getAgentStart() {
-        return agentStart;
-    }
+    public List<Location> getAgentStart() {return agentStart;}
 
     public List<MapMarker> getMarkers() {
         return markers;
