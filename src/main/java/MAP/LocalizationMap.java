@@ -9,6 +9,7 @@ public class LocalizationMap {
     private Integer width;
     private Integer height;
     private Integer nbAgts;
+    private Boolean openWorld;
     private List<Location> agentStart;
     private List<MapMarker> markers;
 
@@ -23,6 +24,8 @@ public class LocalizationMap {
     public Integer getNbAgts() {
         return nbAgts;
     }
+
+    public Boolean getOpenWorld() {return openWorld;}
 
     public List<Location> getAgentStart() {return agentStart;}
 

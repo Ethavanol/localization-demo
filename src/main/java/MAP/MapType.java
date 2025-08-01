@@ -8,6 +8,7 @@ public enum MapType {
         LOCALIZATION_3x3("maps/localization_map_3x3.json"),
         LOCALIZATION_4x3("maps/localization_map_4x3.json"),
         LOCALIZATION_5x5("maps/localization_map_5x5.json"),
+        LOCALIZATION_5x5_2("maps/localization_map_5x5_2.json"),
         LOCALIZATION_7x7("maps/localization_map_7x7.json"),
         LOCALIZATION_7x7_2("maps/localization_map_7x7_2.json"),
 //        LOCALIZATION_10x10("maps\\localization_map_10x10.json"),

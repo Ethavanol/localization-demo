@@ -108,5 +108,5 @@ dir(left) :- left.
     <-  +~na(goal);
         -~na(goal).
 
-+!checkIfGoal : true
-    <- true.
++!checkIfGoal
+    <-  .print("I am arrived").

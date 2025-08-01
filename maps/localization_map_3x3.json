@@ -2,10 +2,13 @@
   "width": 3,
   "height": 3,
   "nbAgts": 1,
-  "agentStart": {
-    "x": 0,
-    "y": 0
-  },
+  "openWorld" : true,
+  "agentStart": [
+    {
+      "x": 0,
+      "y": 0
+    }
+  ],
   "markers": [
     {
       "location": {

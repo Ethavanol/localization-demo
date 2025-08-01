@@ -14,8 +14,10 @@ MAS rain {
 
 	//executionControl: jason.control.ExecutionControlGUI
 
-    agents: weather
+    agents: a
     agentClass epistemic_jason.asSemantics.AgentEpistemic;
+        b
+        agentClass epistemic_jason.asSemantics.AgentEpistemic;
 
 	aslSourcePath: "src/main/agt";
 }

@@ -14,9 +14,7 @@ MAS navigation_changing {
        agent2
        agentClass multiagents_navigation.MultiAgentsNavAgent
        agentArchClass multiagents_navigation.MultiAgentsNavAgArch;
-       agent3
-       agentClass multiagents_navigation.MultiAgentsNavAgent
-       agentArchClass multiagents_navigation.MultiAgentsNavAgArch;
+
 
     aslSourcePath: "src/main/agt/multi-agents-navigation";
 

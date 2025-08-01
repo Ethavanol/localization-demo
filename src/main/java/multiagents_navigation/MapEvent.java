@@ -43,6 +43,10 @@ public class MapEvent extends EventObject {
         return source.getObsPercepts(this.agentId);
     }
 
+    public List<Literal> getAgentsPerceptions() {
+        return source.getAgentsPercepts(this.agentId);
+    }
+
     public Literal toDelEvent() {
         if(typeEvent == TypeEvent.MOVED){
             if(this.moveDirection == null){

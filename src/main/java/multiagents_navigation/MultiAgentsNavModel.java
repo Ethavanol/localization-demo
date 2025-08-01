@@ -31,7 +31,6 @@ public class MultiAgentsNavModel extends GridWorldModel {
     private static final String SOUTH = "down";
     private static final String EAST = "right";
     private static final String WEST = "left";
-    private static final boolean OPEN_WORLD = true;
     private boolean inputEnabled = true;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
@@ -44,6 +43,7 @@ public class MultiAgentsNavModel extends GridWorldModel {
     private int width;
     private int height;
     private int nbAgts;
+    private boolean openWorld;
 
     private boolean showPossibleWorlds = true;
 
@@ -56,18 +56,19 @@ public class MultiAgentsNavModel extends GridWorldModel {
         UP, DOWN, RIGHT, LEFT
     };
 
-    public MultiAgentsNavModel(int w, int h, int nbAgs) {
+    public MultiAgentsNavModel(int w, int h, int nbAgs, boolean openWorld) {
         super(w, h, nbAgs);
         this.width = w;
         this.height = h;
         this.nbAgts = nbAgs;
+        this.openWorld = openWorld;
         this.goalLocations = new ArrayList<>();
         this.mapEventListeners = new ArrayList<>();
         this.lastPositions = new ArrayList<>(Arrays.asList(null, null, null));
     }
 
     public MultiAgentsNavModel(LocalizationMap map, MapType mapType) {
-        this(map.getWidth(), map.getHeight(), map.getNbAgts());
+        this(map.getWidth(), map.getHeight(), map.getNbAgts(), map.getOpenWorld());
 
         for (var marker : map.getMarkers()) {
             if (marker.getType() == GOAL)
@@ -131,7 +132,7 @@ public class MultiAgentsNavModel extends GridWorldModel {
 
 
     synchronized public boolean move(Direction dir, int ag) throws Exception {
-        if(OPEN_WORLD) {
+        if(openWorld) {
             return moveOpenWorld(dir,ag);
         } else {
             return moveCloseWorld(dir,ag);
@@ -266,7 +267,7 @@ public class MultiAgentsNavModel extends GridWorldModel {
 
 
     public Location delta(Location src, Location dst) {
-        if(OPEN_WORLD){
+        if(openWorld){
             return deltaOpenWorld(src,dst);
         } else {
             return deltaCloseWorld(src,dst);
@@ -326,7 +327,7 @@ public class MultiAgentsNavModel extends GridWorldModel {
 
         int pX = cur.x + x;
         int pY = cur.y + y;
-        if(OPEN_WORLD){
+        if(openWorld){
             pX = (pX + width) % width;
             pY = (pY + height) % height;
         }
@@ -345,6 +346,48 @@ public class MultiAgentsNavModel extends GridWorldModel {
             return ASSyntax.createLiteral("obs", locAtom);
         }
         return ASSyntax.createLiteral(Literal.LNeg, "obs", locAtom);
+    }
+
+    public List<Literal> getAgentsPercepts(Integer agent) {
+        // Get directional percepts
+        Location agentLoc = getAgPos(agent);
+        var arrList = new ArrayList<Literal>();
+
+        arrList.add(getAgentPercept(agentLoc, 0, -1));
+        arrList.add(getAgentPercept(agentLoc, 0, 1));
+        arrList.add(getAgentPercept(agentLoc, -1, 0));
+        arrList.add(getAgentPercept(agentLoc, 1, 0));
+        return arrList;
+    }
+
+
+    private Literal getAgentPercept(Location cur, int x, int y) {
+
+        int pX = cur.x + x;
+        int pY = cur.y + y;
+
+        if (openWorld) {
+            pX = (pX + width) % width;
+            pY = (pY + height) % height;
+        }
+
+        Location delta = new Location(pX, pY);
+        Literal locAtom;
+
+        if (x == 0 && y == -1)
+            locAtom = ASSyntax.createAtom(NORTH);
+        else if (x == 0 && y == 1)
+            locAtom = ASSyntax.createAtom(SOUTH);
+        else if (x == 1 && y == 0)
+            locAtom = ASSyntax.createAtom(EAST);
+        else // (x == -1 && y == 0)
+            locAtom = ASSyntax.createAtom(WEST);
+
+        // Check if and agent is perceived
+        if (inGrid(delta) && getAgAtPos(delta) != -1) {
+            return ASSyntax.createLiteral("ag", locAtom);
+        }
+        return ASSyntax.createLiteral(Literal.LNeg, "ag", locAtom);
     }
 
 

@@ -29,7 +29,7 @@ public class MultiAgentsNavEnv extends Environment implements MapEventListener {
 
         agentName = args[0];
 
-        model = MultiAgentsNavModel.loadFromFile(MapType.LOCALIZATION_5x5);
+        model = MultiAgentsNavModel.loadFromFile(MapType.LOCALIZATION_7x7);
 
         if(args.length > 1 && args[1].equals("gui")){
             MultiAgentsNavView navView = new MultiAgentsNavView(model);
@@ -93,6 +93,7 @@ public class MultiAgentsNavEnv extends Environment implements MapEventListener {
             return curPercepts;
         }
 
+        curPercepts.addAll(nextEvent.getAgentsPerceptions());
         curPercepts.add(nextEvent.toDelEvent());
         curPercepts.addAll(nextEvent.getObsPerceptions());
 

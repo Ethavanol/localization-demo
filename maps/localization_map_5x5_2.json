@@ -6,32 +6,39 @@
   "agentStart": [
     {
       "x": 0,
-      "y": 1
+      "y": 0
     },
     {
-      "x": 3,
-      "y": 0
+      "x": 2,
+      "y": 1
     }
   ],
   "markers": [
     {
       "location": {
-        "x": 2,
+        "x": 1,
         "y": 4
       },
       "type": 8
     },
     {
       "location": {
-        "x": 1,
+        "x": 2,
         "y": 2
       },
       "type": 4
     },
     {
       "location": {
-        "x": 2,
-        "y": 2
+        "x": 4,
+        "y": 1
+      },
+      "type": 4
+    },
+    {
+      "location": {
+        "x": 3,
+        "y": 4
       },
       "type": 4
     }

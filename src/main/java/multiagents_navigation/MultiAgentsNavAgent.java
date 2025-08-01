@@ -12,6 +12,7 @@ import epistemic_jason.asSemantics.modelListener.World;
 import epistemic_jason.formula.PropFormula;
 import jason.JasonException;
 import jason.asSemantics.Event;
+import jason.asSemantics.Intention;
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Pred;
 import jason.asSyntax.Trigger;
@@ -28,9 +29,21 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
 
     private HashMap<Pair<String, String>, List<Direction>> shortestDirectionsFromLocationToOtherLocation = new HashMap<>();
     private boolean[][] wallGrid;
-    private static final boolean OPENWORLD = false;
+    private Boolean openWorld;
 
     MultiAgentsNavEnv navEnv;
+
+    public Boolean getOpenWorld() {
+        return openWorld;
+    }
+
+    public int getMapWidth(){
+        return wallGrid[0].length;
+    }
+
+    public int getMapHeight(){
+        return wallGrid.length;
+    }
 
     @Override
     public void initAg() {
@@ -50,7 +63,7 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
     @Override
     public void modelCreated(){
         System.out.println("Model created");
-        this.readMap(MapType.LOCALIZATION_5x5);
+        this.readMap(MapType.LOCALIZATION_7x7);
         ModelResponse model = this.getWorldsResponseModel();
         for(World world : model.getWorlds()){
             Pair<String, String> locationsValues = getLocandLocGoalValues(world);
@@ -110,6 +123,20 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
     }
 
 
+    public List<String> getListPropsLocationsIA(){
+        ModelResponse model = this.getWorldsResponseModel();
+        Set<String> propositionsLoc = new HashSet<>();
+        for(World world : model.getWorlds()){
+            for (String prop : world.getPropositions().keySet()) {
+                if (prop.startsWith("loc(")) {
+                    propositionsLoc.add(prop);
+                }
+            }
+        }
+        return propositionsLoc.stream().toList();
+    }
+
+
     public void updateViewFromSemanticModel(ModelResponse model) {
         try {
             List<Pair<World, List<PropFormula>>> newProps = updateDirectionsInWorlds(model.getWorlds());
@@ -126,6 +153,7 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
             this.getBB().add(ASSyntax.createLiteral(dir.toString()));
         }
     }
+
 
 
     public List<Pair<World, List<PropFormula>>> updateDirectionsInWorlds(List<World> worlds) throws ParseException {
@@ -205,6 +233,7 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
             throw new RuntimeException("Failed to load map!", e);
         }
         LocalizationMap map = gson.fromJson(reader, LocalizationMap.class);
+        this.openWorld = map.getOpenWorld();
 
         wallGrid = new boolean[map.getWidth()][map.getHeight()];
         MapMarker prev = null;
@@ -304,7 +333,7 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
                 break;
         }
 
-        if (OPENWORLD) {
+        if (openWorld) {
             // Wrap around the grid (torus topology)
             x = (x + width) % width;
             y = (y + height) % height;
@@ -321,11 +350,73 @@ public class MultiAgentsNavAgent extends AgentEpistemic {
 
 
     private Direction directionFromTo(Location from, Location to) {
-        if (to.x == from.x + 1 && to.y == from.y) return Direction.RIGHT;
-        if (to.x == from.x - 1 && to.y == from.y) return Direction.LEFT;
-        if (to.y == from.y + 1 && to.x == from.x) return Direction.DOWN;
-        if (to.y == from.y - 1 && to.x == from.x) return Direction.UP;
+        if (openWorld) {
+            int width = wallGrid.length;
+            int height = wallGrid[0].length;
+
+            if ((to.x + width) % width == (from.x + 1) % width && to.y == from.y) return Direction.RIGHT;
+            if ((to.x + width) % width == (from.x - 1 + width) % width && to.y == from.y) return Direction.LEFT;
+            if ((to.y + height) % height == (from.y + 1) % height && to.x == from.x) return Direction.DOWN;
+            if ((to.y + height) % height == (from.y - 1 + height) % height && to.x == from.x) return Direction.UP;
+        } else {
+            if (to.x == from.x + 1 && to.y == from.y) return Direction.RIGHT;
+            if (to.x == from.x - 1 && to.y == from.y) return Direction.LEFT;
+            if (to.y == from.y + 1 && to.x == from.x) return Direction.DOWN;
+            if (to.y == from.y - 1 && to.x == from.x) return Direction.UP;
+        }
         return null;
+    }
+
+    @Override
+    public Intention selectIntention(Queue<Intention> intentions) {
+        if(intentions.size() > 1) {
+            for (Intention intention : intentions) {
+                Trigger trigger = intention.peek().getTrigger();
+
+                if(isPriorityTrigger(trigger)){
+                    intentions.remove(intention);
+                    return intention;
+                }
+            }
+        }
+        return (Intention)intentions.poll();
+    }
+
+
+    @Override
+    public Event selectEvent(Queue<Event> events) {
+        if(events.size() > 1){
+            for(Event event : events){
+                Trigger trigger = event.getTrigger();
+
+                if(isPriorityTrigger(trigger)){
+                    events.remove(event);
+                    return event;
+                }
+            }
+        }
+        return (Event)events.poll();
+    }
+
+    private boolean isPriorityTrigger(Trigger trig) {
+        String functor = trig.getLiteral().getFunctor();
+        Boolean negated = trig.getLiteral().negated();
+
+
+        // we prioritze the communication
+//        if (functor.equals("communicating")) return true;
+//        if (functor.equals("ag")) return true;
+//        if (functor.equals("perc")) return true;
+//        if (functor.equals("agent")) return true;
+//        if (functor.equals("worlds")) return true;
+//        if (functor.equals("me")) return true;
+//        if (functor.equals("kqml_received")) {
+//            String trigStr = trig.toString();
+//            return trigStr.contains("tell,agent(")
+//                    || trigStr.contains("tell,me(")
+//                    || trigStr.contains("tell,worlds(");
+//        }
+        return false;
     }
 
 }

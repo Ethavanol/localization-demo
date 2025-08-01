@@ -1,7 +1,5 @@
 range(loc(X,Y)) :- (.range(X,0,4) & .range(Y,0,4)).
-range(locGoal(X,Y)) :- (.range(X,4,4) & .range(Y,0,0)).
-range(locGoal(X,Y)) :- (.range(X,2,2) & .range(Y,4,4)).
-range(locGoal(X,Y)) :- (.range(X,1,1) & .range(Y,3,3)).
+range(locGoal(1,4)) :- true.
 
 range(none) :- true.
 none :- .findall(not(loc(X, Y)), range(loc(X, Y)), List) & .big_and(Y, List) & Y.
@@ -11,26 +9,23 @@ range(noneGoal) :- true.
 noneGoal :- .findall(not(locGoal(X, Y)), range(locGoal(X, Y)), List) & .big_and(Y, List) & Y.
 ~noneGoal.
 
-~loc(1,2).
+~loc(4,1).
 ~loc(2,2).
+~loc(3,4).
 
 ~loc(X1, Y1) :- loc(X2, Y2) & (X1 \== X2 | Y1 \== Y2).
-~locGoal(X1, Y1) :- locGoal(X2, Y2) & (X1 \== X2 | Y1 \== Y2).
 
 
-obs(right) :- loc(0,2).
-obs(down) :- loc(1,1).
-obs(down) :- loc(2,1).
-obs(up) :- loc(1,3).
-obs(up) :- loc(2,3).
-obs(left) :- loc(3,2).
+obs(right) :- loc(1,2) | loc(3,1) | loc(2,4).
+obs(down) :- loc(2,1) | loc(4,0) | loc(3,3).
+obs(up) :- loc(2,3) | loc(4,2) | loc(3,0).
+obs(left) :- loc(3,2) | loc(0,1) | loc(4,4).
 
 dir(right) :- right.
 dir(down) :- down.
 dir(up) :- up.
 dir(left) :- left.
 
-!nav.
 
 // MOVE EVENTS
 // OPEN-WORLD VERSION
@@ -71,7 +66,6 @@ dir(left) :- left.
 +on(~obs(D)) : not obs(D).
 
 +on(~loc(X,Y)) : not loc(X,Y).
-+on(~locGoal(X,Y)) : not locGoal(X,Y).
 
 +on(~na(goal)) : not (loc(X,Y) & locGoal(X,Y)).
 
@@ -79,62 +73,30 @@ dir(left) :- left.
 +!nav : at(goal)
     <- .print("At goal.").
 
-//if the agent has a temporary objective he goes in the direction that leads to it
-+!nav : poss(dir(D) & locGoal(X2,Y2) & obj(X2,Y2))
-    <- move(D);
-       !storeSameMove(D);
-       !checkIfGoal;
-       !nav.
-
 //if the agent moved in the same direction 5 times he has to change of direction
 +!nav : dir(D1) & samemove(D2,Nb) & Nb >= 5 & D1 \== D2
     <- move(D1);
        !storeSameMove(D1);
        !checkIfGoal;
-       !tryAddTemporaryObjective;
        !nav.
 
 +!nav : dir(D)
     <- move(D);
        !storeSameMove(D);
        !checkIfGoal;
-       !tryAddTemporaryObjective;
        !nav.
 
 +!nav : poss(dir(D1)) & samemove(D2,Nb) & Nb >= 5 & D1 \== D2
     <- move(D1);
        !storeSameMove(D1);
        !checkIfGoal;
-       !tryAddTemporaryObjective;
        !nav.
 
 +!nav : poss(dir(D))
     <- move(D);
        !storeSameMove(D);
        !checkIfGoal;
-       !tryAddTemporaryObjective;
        !nav.
-
-
-// Here we could directly do Loc(X,Y) & poss(locGoal(X2,Y2)) but this is not optimized as we will have to test each possible pair
-+!tryAddTemporaryObjective : loc(X,Y)
-    <- !addTemporaryObjective.
-
-+!tryAddTemporaryObjective : true
-    <- .print("not sure about where I am...").
-
-+!addTemporaryObjective : poss(locGoal(X2,Y2))
-    <- +obj(X2,Y2).
-
-+!addTemporaryObjective : true
-    <- .print("Huh ?! I know where I am but I have no goal possible !!!").
-
-+!checkIfGoal : not at(goal) & loc(X,Y) & poss(locGoal(X,Y))
-    <-  -obj(X,Y);
-        +~locGoal(X,Y).
-
-+!checkIfGoal : not at(goal) & locGoal(X,Y) & poss(loc(X,Y))
-    <-  +~loc(X,Y).
 
 +!checkIfGoal : not at(goal)
     <-  +~na(goal);

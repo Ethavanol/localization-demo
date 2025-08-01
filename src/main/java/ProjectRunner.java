@@ -10,7 +10,7 @@ public class ProjectRunner {
 
         // default to epistemic-agents.mas2j
         if(args.length == 0)
-            args = new String[] {"navigation_changing.mas2j"};
+            args = new String[] {"multiagents_navigation.mas2j"};
 
         RunLocalMAS.main(args);
     }
